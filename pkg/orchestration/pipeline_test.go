@@ -3,6 +3,7 @@ package orchestration
 import (
 	"context"
 	"errors"
+	"sync"
 	"testing"
 	"time"
 
@@ -11,6 +12,7 @@ import (
 
 // mockAgent implements sdk.Agent for testing orchestration patterns.
 type mockAgent struct {
+	mu sync.Mutex
 	// responses maps subject to response data
 	responses map[string][]byte
 	// errors maps subject to error
@@ -43,7 +45,9 @@ func (m *mockAgent) OnRequestError(subject string, err error) *mockAgent {
 }
 
 func (m *mockAgent) Request(ctx context.Context, subject string, data []byte) ([]byte, error) {
+	m.mu.Lock()
 	m.calls = append(m.calls, mockCall{subject: subject, data: data})
+	m.mu.Unlock()
 
 	if err, ok := m.errors[subject]; ok {
 		return nil, err
