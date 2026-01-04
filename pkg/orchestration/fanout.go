@@ -2,6 +2,7 @@ package orchestration
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -137,7 +138,7 @@ func FirstSuccess() ExecuteOption {
 		}
 
 		return nil, &FanOutError{
-			Err:     fmt.Errorf("all agents failed"),
+			Err:     errors.Join(allErrors...),
 			Results: results,
 		}
 	})
