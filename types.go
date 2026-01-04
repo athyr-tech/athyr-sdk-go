@@ -1,0 +1,156 @@
+// Package sdk provides a Go agent for the Athyr platform.
+// Agents use this SDK to connect, communicate, and access platform services.
+package sdk
+
+import (
+	"fmt"
+	"time"
+)
+
+// AgentCard describes an agent's identity and capabilities.
+type AgentCard struct {
+	Name         string            // Display name
+	Description  string            // Purpose and functionality
+	Version      string            // Agent software version
+	Capabilities []string          // List of capability names
+	Metadata     map[string]string // Extensible key-value pairs
+}
+
+// Message represents a chat message in LLM conversations.
+type Message struct {
+	Role    string // "system", "user", "assistant"
+	Content string
+}
+
+// CompletionConfig holds optional parameters for completions.
+type CompletionConfig struct {
+	Temperature float64  // 0.0-1.0, higher = more random
+	MaxTokens   int      // Maximum tokens to generate
+	TopP        float64  // Nucleus sampling
+	Stop        []string // Stop sequences
+}
+
+// CompletionRequest is a request for LLM completion.
+type CompletionRequest struct {
+	Model         string           // Required: model identifier
+	Messages      []Message        // Conversation history
+	Config        CompletionConfig // Optional parameters
+	SessionID     string           // Optional: for memory injection
+	IncludeMemory bool             // Whether to inject memory context
+}
+
+// TokenUsage tracks token consumption.
+type TokenUsage struct {
+	PromptTokens     int
+	CompletionTokens int
+	TotalTokens      int
+}
+
+// CompletionResponse is the result of an LLM completion.
+type CompletionResponse struct {
+	Content      string
+	Model        string
+	Backend      string
+	Usage        TokenUsage
+	FinishReason string
+	Latency      time.Duration
+}
+
+// StreamChunk represents a single chunk in a streaming response.
+type StreamChunk struct {
+	Content string
+	Done    bool
+	Usage   *TokenUsage // Only on final chunk
+	Model   string      // Only on final chunk
+	Backend string      // Only on final chunk
+	Error   string      // Error message if failed
+}
+
+// StreamHandler is called for each chunk in a streaming response.
+type StreamHandler func(chunk StreamChunk) error
+
+// Model represents an available LLM model.
+type Model struct {
+	ID        string
+	Name      string
+	Backend   string
+	Available bool
+}
+
+// SessionProfile configures memory session behavior.
+type SessionProfile struct {
+	Type                   string // "rolling_window"
+	MaxTokens              int
+	SummarizationThreshold int
+}
+
+// DefaultSessionProfile returns sensible defaults.
+func DefaultSessionProfile() SessionProfile {
+	return SessionProfile{
+		Type:                   "rolling_window",
+		MaxTokens:              4096,
+		SummarizationThreshold: 3000,
+	}
+}
+
+// Session represents a memory session.
+type Session struct {
+	ID        string
+	AgentID   string
+	Messages  []SessionMessage
+	Summary   string
+	Hints     []string
+	Profile   SessionProfile
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+// SessionMessage represents a message stored in session memory.
+type SessionMessage struct {
+	Role      string
+	Content   string
+	Timestamp time.Time
+	Tokens    int
+}
+
+// SubscribeMessage represents a message received from a subscription.
+type SubscribeMessage struct {
+	Subject string
+	Data    []byte
+	Reply   string // Reply subject for request/reply pattern
+}
+
+// MessageHandler processes incoming subscription messages.
+type MessageHandler func(msg SubscribeMessage)
+
+// Subscription represents an active message subscription.
+type Subscription interface {
+	Unsubscribe() error
+}
+
+// KVEntry represents a value retrieved from the KV store.
+type KVEntry struct {
+	Value    []byte
+	Revision uint64
+}
+
+// StreamError represents a streaming failure with context about what was
+// already streamed. This allows agents to make informed retry decisions.
+type StreamError struct {
+	Err                error  // Original error
+	Backend            string // Backend that failed
+	AccumulatedContent string // Content streamed before failure
+	PartialResponse    bool   // True if some content was streamed
+}
+
+func (e *StreamError) Error() string {
+	if e.PartialResponse {
+		return fmt.Sprintf("stream failed after partial response (%d chars) from %s: %v",
+			len(e.AccumulatedContent), e.Backend, e.Err)
+	}
+	return fmt.Sprintf("stream failed on %s: %v", e.Backend, e.Err)
+}
+
+func (e *StreamError) Unwrap() error {
+	return e.Err
+}
