@@ -15,7 +15,7 @@ package main
 
 import (
     "context"
-    sdk "github.com/athyr-tech/athyr-sdk-go"
+    sdk "github.com/athyr-tech/athyr-sdk-go/pkg/agent"
 )
 
 func main() {
@@ -54,7 +54,7 @@ func main() {
 
 ### Orchestration Patterns
 
-Located in `orchestration/` package:
+Located in `pkg/orchestration/` package:
 
 | Pattern | Description |
 |---------|-------------|
@@ -90,6 +90,8 @@ See [`examples/`](examples/) for complete working examples:
 For building agent services that handle requests:
 
 ```go
+import sdk "github.com/athyr-tech/athyr-sdk-go/pkg/agent"
+
 func main() {
     server := sdk.NewServer("localhost:9090",
         sdk.WithServerName("my-service"),
