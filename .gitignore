@@ -1,1 +1,43 @@
+# IDE
 .idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+vendor/
+
+# Build
+bin/
+dist/
+build/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Beads (if added later)
+.beads/
+
+# Local development
+.env
+.env.local
+*.local
+
+# Coverage
+coverage.out
+coverage.html
+
+# Temporary
+tmp/
+temp/
+*.tmp
+*.log
