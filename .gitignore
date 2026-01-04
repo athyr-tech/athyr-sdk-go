@@ -41,3 +41,9 @@ tmp/
 temp/
 *.tmp
 *.log
+
+# bv (beads viewer) local config and caches
+.bv/
+
+# Claude Code local settings
+.claude/
