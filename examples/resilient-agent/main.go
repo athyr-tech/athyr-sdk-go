@@ -27,7 +27,7 @@ import (
 	"syscall"
 	"time"
 
-	sdk "github.com/athyr-tech/athyr-sdk-go"
+	sdk "github.com/athyr-tech/athyr-sdk-go/pkg/agent"
 )
 
 const (

@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"time"
 
-	sdk "github.com/athyr-tech/athyr-sdk-go"
+	sdk "github.com/athyr-tech/athyr-sdk-go/pkg/agent"
 )
 
 // Pipeline chains agents in sequential order where each agent

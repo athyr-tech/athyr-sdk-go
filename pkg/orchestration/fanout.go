@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	sdk "github.com/athyr-tech/athyr-sdk-go"
+	sdk "github.com/athyr-tech/athyr-sdk-go/pkg/agent"
 )
 
 // FanOut runs multiple agents in parallel on the same input

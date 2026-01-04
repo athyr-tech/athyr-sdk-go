@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	sdk "github.com/athyr-tech/athyr-sdk-go"
+	sdk "github.com/athyr-tech/athyr-sdk-go/pkg/agent"
 )
 
 // HandoffRouter provides dynamic task routing where a triage agent

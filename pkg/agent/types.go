@@ -1,6 +1,6 @@
 // Package sdk provides a Go agent for the Athyr platform.
 // Agents use this SDK to connect, communicate, and access platform services.
-package sdk
+package agent
 
 import (
 	"fmt"

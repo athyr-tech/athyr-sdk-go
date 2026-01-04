@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	sdk "github.com/athyr-tech/athyr-sdk-go"
+	sdk "github.com/athyr-tech/athyr-sdk-go/pkg/agent"
 )
 
 // mockAgent implements sdk.Agent for testing orchestration patterns.

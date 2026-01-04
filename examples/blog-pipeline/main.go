@@ -14,8 +14,8 @@ import (
 	"syscall"
 	"time"
 
-	sdk "github.com/athyr-tech/athyr-sdk-go"
-	"github.com/athyr-tech/athyr-sdk-go/orchestration"
+	sdk "github.com/athyr-tech/athyr-sdk-go/pkg/agent"
+	"github.com/athyr-tech/athyr-sdk-go/pkg/orchestration"
 )
 
 var (
