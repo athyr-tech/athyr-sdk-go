@@ -48,3 +48,4 @@ temp/
 # Claude Code local settings
 .claude/
 /localDocs/
+AGENTS.md
