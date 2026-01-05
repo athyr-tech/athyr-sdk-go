@@ -1,4 +1,6 @@
-package main
+// Package types defines shared data structures for the blog pipeline.
+// All agents in the pipeline import this package for consistent data exchange.
+package types
 
 // PipelineData flows through all pipeline stages.
 // Each stage reads the accumulated data and adds its contribution.
@@ -22,11 +24,17 @@ type PipelineData struct {
 	TotalTokens int `json:"total_tokens"`
 }
 
-// Stage subjects define the Athyr subjects for each pipeline stage.
-// These subjects are used for both subscription and routing.
+// Subject constants define the Athyr messaging subjects for each pipeline stage.
+// Each agent subscribes to its subject and responds to requests.
 const (
-	SubjectOutline = "demo.blog.outline"
-	SubjectDraft   = "demo.blog.draft"
-	SubjectEdit    = "demo.blog.edit"
-	SubjectSEO     = "demo.blog.seo"
+	SubjectOutline = "blog.pipeline.outline"
+	SubjectDraft   = "blog.pipeline.draft"
+	SubjectEdit    = "blog.pipeline.edit"
+	SubjectSEO     = "blog.pipeline.seo"
 )
+
+// DefaultModel is the default LLM model used by agents.
+const DefaultModel = "qwen3:4b"
+
+// DefaultAthyrAddr is the default Athyr server address.
+const DefaultAthyrAddr = "localhost:9090"
