@@ -28,7 +28,7 @@ import (
 	"syscall"
 	"time"
 
-	sdk "github.com/athyr-tech/athyr-sdk-go/pkg/agent"
+	"github.com/athyr-tech/athyr-sdk-go/pkg/athyr"
 )
 
 const athyrAddr = "localhost:9090"
@@ -57,8 +57,8 @@ func run(ctx context.Context) error {
 	fmt.Println("===================================")
 
 	// Create SDK client
-	client, err := sdk.NewAgent(athyrAddr,
-		sdk.WithAgentCard(sdk.AgentCard{
+	client, err := athyr.NewAgent(athyrAddr,
+		athyr.WithAgentCard(athyr.AgentCard{
 			Name:         "echo-agent",
 			Description:  "Echoes messages back with a prefix",
 			Version:      "1.0.0",
@@ -81,7 +81,7 @@ func run(ctx context.Context) error {
 	fmt.Println("Subscribing to 'echo.>' ...")
 
 	messageCount := 0
-	sub, err := client.Subscribe(ctx, "echo.>", func(msg sdk.SubscribeMessage) {
+	sub, err := client.Subscribe(ctx, "echo.>", func(msg athyr.SubscribeMessage) {
 		messageCount++
 		fmt.Printf("\n[%s] Received on %s: %s\n",
 			time.Now().Format("15:04:05"),

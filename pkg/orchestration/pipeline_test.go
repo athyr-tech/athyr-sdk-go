@@ -7,10 +7,10 @@ import (
 	"testing"
 	"time"
 
-	sdk "github.com/athyr-tech/athyr-sdk-go/pkg/agent"
+	"github.com/athyr-tech/athyr-sdk-go/pkg/athyr"
 )
 
-// mockAgent implements sdk.Agent for testing orchestration patterns.
+// mockAgent implements athyr.Agent for testing orchestration patterns.
 type mockAgent struct {
 	mu sync.Mutex
 	// responses maps subject to response data
@@ -58,7 +58,7 @@ func (m *mockAgent) Request(ctx context.Context, subject string, data []byte) ([
 	return nil, errors.New("no mock response configured for " + subject)
 }
 
-// Implement remaining sdk.Agent interface (not used in orchestration tests)
+// Implement remaining athyr.Agent interface (not used in orchestration tests)
 func (m *mockAgent) Connect(ctx context.Context) error { return nil }
 func (m *mockAgent) Close() error                      { return nil }
 func (m *mockAgent) AgentID() string                   { return "mock-agent" }
@@ -66,28 +66,28 @@ func (m *mockAgent) Connected() bool                   { return true }
 func (m *mockAgent) Publish(ctx context.Context, subject string, data []byte) error {
 	return nil
 }
-func (m *mockAgent) Subscribe(ctx context.Context, subject string, handler sdk.MessageHandler) (sdk.Subscription, error) {
+func (m *mockAgent) Subscribe(ctx context.Context, subject string, handler athyr.MessageHandler) (athyr.Subscription, error) {
 	return nil, nil
 }
-func (m *mockAgent) QueueSubscribe(ctx context.Context, subject, queue string, handler sdk.MessageHandler) (sdk.Subscription, error) {
+func (m *mockAgent) QueueSubscribe(ctx context.Context, subject, queue string, handler athyr.MessageHandler) (athyr.Subscription, error) {
 	return nil, nil
 }
-func (m *mockAgent) Complete(ctx context.Context, req sdk.CompletionRequest) (*sdk.CompletionResponse, error) {
+func (m *mockAgent) Complete(ctx context.Context, req athyr.CompletionRequest) (*athyr.CompletionResponse, error) {
 	return nil, nil
 }
-func (m *mockAgent) CompleteStream(ctx context.Context, req sdk.CompletionRequest, handler sdk.StreamHandler) error {
+func (m *mockAgent) CompleteStream(ctx context.Context, req athyr.CompletionRequest, handler athyr.StreamHandler) error {
 	return nil
 }
-func (m *mockAgent) Models(ctx context.Context) ([]sdk.Model, error) { return nil, nil }
-func (m *mockAgent) CreateSession(ctx context.Context, profile sdk.SessionProfile) (*sdk.Session, error) {
+func (m *mockAgent) Models(ctx context.Context) ([]athyr.Model, error) { return nil, nil }
+func (m *mockAgent) CreateSession(ctx context.Context, profile athyr.SessionProfile, systemPrompt string) (*athyr.Session, error) {
 	return nil, nil
 }
-func (m *mockAgent) GetSession(ctx context.Context, sessionID string) (*sdk.Session, error) {
+func (m *mockAgent) GetSession(ctx context.Context, sessionID string) (*athyr.Session, error) {
 	return nil, nil
 }
 func (m *mockAgent) DeleteSession(ctx context.Context, sessionID string) error { return nil }
 func (m *mockAgent) AddHint(ctx context.Context, sessionID, hint string) error { return nil }
-func (m *mockAgent) KV(bucket string) sdk.KVBucket                             { return nil }
+func (m *mockAgent) KV(bucket string) athyr.KVBucket                             { return nil }
 
 // Tests
 

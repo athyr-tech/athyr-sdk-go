@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	sdk "github.com/athyr-tech/athyr-sdk-go/pkg/agent"
+	"github.com/athyr-tech/athyr-sdk-go/pkg/athyr"
 )
 
 // OutlineStage creates blog post outlines from topics.
@@ -13,8 +13,8 @@ import (
 
 // OutlineHandler returns a typed handler for the outline stage.
 // It demonstrates the Handler[Req, Resp] pattern from the SDK.
-func OutlineHandler(model string) sdk.Handler[PipelineData, PipelineData] {
-	return func(ctx sdk.Context, data PipelineData) (PipelineData, error) {
+func OutlineHandler(model string) athyr.Handler[PipelineData, PipelineData] {
+	return func(ctx athyr.Context, data PipelineData) (PipelineData, error) {
 		fmt.Printf("\n📋 Stage: OUTLINE\n")
 		fmt.Printf("   Processing topic: %q\n", data.Topic)
 
@@ -23,9 +23,9 @@ func OutlineHandler(model string) sdk.Handler[PipelineData, PipelineData] {
 
 		// Call the LLM via Athyr
 		startTime := time.Now()
-		resp, err := ctx.Agent().Complete(ctx, sdk.CompletionRequest{
+		resp, err := ctx.Agent().Complete(ctx, athyr.CompletionRequest{
 			Model: model,
-			Messages: []sdk.Message{
+			Messages: []athyr.Message{
 				{Role: "system", Content: outlineSystemPrompt},
 				{Role: "user", Content: userPrompt},
 			},
@@ -34,7 +34,7 @@ func OutlineHandler(model string) sdk.Handler[PipelineData, PipelineData] {
 
 		if err != nil {
 			fmt.Printf("   ✗ Error: %v\n", err)
-			return data, sdk.Unavailable("outline generation failed: %v", err)
+			return data, athyr.Unavailable("outline generation failed: %v", err)
 		}
 
 		fmt.Printf("   ✓ Generated (%d tokens, %v)\n", resp.Usage.TotalTokens, duration.Round(time.Millisecond))

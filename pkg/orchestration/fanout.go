@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	sdk "github.com/athyr-tech/athyr-sdk-go/pkg/agent"
+	"github.com/athyr-tech/athyr-sdk-go/pkg/athyr"
 )
 
 // FanOut runs multiple agents in parallel on the same input
@@ -184,7 +184,7 @@ func RequireQuorum(n int) ExecuteOption {
 }
 
 // Execute runs all agents in parallel and aggregates results.
-func (f *FanOut) Execute(ctx context.Context, client sdk.Agent, input []byte, opts ...ExecuteOption) ([]byte, error) {
+func (f *FanOut) Execute(ctx context.Context, client athyr.Agent, input []byte, opts ...ExecuteOption) ([]byte, error) {
 	trace, err := f.ExecuteWithTrace(ctx, client, input, opts...)
 	if err != nil {
 		return nil, err
@@ -193,7 +193,7 @@ func (f *FanOut) Execute(ctx context.Context, client sdk.Agent, input []byte, op
 }
 
 // ExecuteWithTrace runs all agents and returns detailed execution trace.
-func (f *FanOut) ExecuteWithTrace(ctx context.Context, client sdk.Agent, input []byte, opts ...ExecuteOption) (*FanOutTrace, error) {
+func (f *FanOut) ExecuteWithTrace(ctx context.Context, client athyr.Agent, input []byte, opts ...ExecuteOption) (*FanOutTrace, error) {
 	// Apply options
 	execOpts := &executeOptions{
 		aggregator: defaultAggregator,

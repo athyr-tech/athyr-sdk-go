@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	sdk "github.com/athyr-tech/athyr-sdk-go/pkg/agent"
+	"github.com/athyr-tech/athyr-sdk-go/pkg/athyr"
 )
 
 // SEOStage optimizes blog posts for search engines.
@@ -12,8 +12,8 @@ import (
 // produces the final SEO-optimized version.
 
 // SEOHandler returns a typed handler for the SEO stage.
-func SEOHandler(model string) sdk.Handler[PipelineData, PipelineData] {
-	return func(ctx sdk.Context, data PipelineData) (PipelineData, error) {
+func SEOHandler(model string) athyr.Handler[PipelineData, PipelineData] {
+	return func(ctx athyr.Context, data PipelineData) (PipelineData, error) {
 		fmt.Printf("\n🔎 Stage: SEO\n")
 		fmt.Printf("   Optimizing for search...\n")
 
@@ -24,9 +24,9 @@ func SEOHandler(model string) sdk.Handler[PipelineData, PipelineData] {
 
 		// Call the LLM via Athyr
 		startTime := time.Now()
-		resp, err := ctx.Agent().Complete(ctx, sdk.CompletionRequest{
+		resp, err := ctx.Agent().Complete(ctx, athyr.CompletionRequest{
 			Model: model,
-			Messages: []sdk.Message{
+			Messages: []athyr.Message{
 				{Role: "system", Content: seoSystemPrompt},
 				{Role: "user", Content: userPrompt},
 			},
@@ -35,7 +35,7 @@ func SEOHandler(model string) sdk.Handler[PipelineData, PipelineData] {
 
 		if err != nil {
 			fmt.Printf("   ✗ Error: %v\n", err)
-			return data, sdk.Unavailable("SEO optimization failed: %v", err)
+			return data, athyr.Unavailable("SEO optimization failed: %v", err)
 		}
 
 		fmt.Printf("   ✓ Generated (%d tokens, %v)\n", resp.Usage.TotalTokens, duration.Round(time.Millisecond))

@@ -25,7 +25,7 @@ Each stage is an independent handler that:
 ```
 blog-pipeline/
 ├── main.go      # CLI, orchestration, and pipeline execution
-├── types.go     # PipelineData struct and NATS subjects
+├── types.go     # PipelineData struct and Athyr subjects
 ├── outline.go   # Stage 1: Creates blog outline from topic
 ├── draft.go     # Stage 2: Writes full draft from outline
 ├── edit.go      # Stage 3: Improves draft for clarity
@@ -42,10 +42,10 @@ Each stage uses the SDK's `Handler[Req, Resp]` pattern for automatic JSON marsha
 ```go
 import "github.com/athyr/sdk"
 
-func OutlineHandler(model string) sdk.Handler[PipelineData, PipelineData] {
-    return func(ctx sdk.Context, data PipelineData) (PipelineData, error) {
+func OutlineHandler(model string) athyr.Handler[PipelineData, PipelineData] {
+    return func(ctx athyr.Context, data PipelineData) (PipelineData, error) {
         // Access the agent via ctx.Agent()
-        resp, err := ctx.Agent().Complete(ctx, sdk.CompletionRequest{...})
+        resp, err := ctx.Agent().Complete(ctx, athyr.CompletionRequest{...})
 
         data.Outline = resp.Content
         return data, nil
@@ -173,8 +173,8 @@ package main
 
 import "github.com/athyr/sdk"
 
-func TranslateHandler(model, targetLang string) sdk.Handler[PipelineData, PipelineData] {
-    return func(ctx sdk.Context, data PipelineData) (PipelineData, error) {
+func TranslateHandler(model, targetLang string) athyr.Handler[PipelineData, PipelineData] {
+    return func(ctx athyr.Context, data PipelineData) (PipelineData, error) {
         // Your translation logic here
         return data, nil
     }
@@ -194,7 +194,7 @@ const SubjectTranslate = "demo.blog.translate"
 ```go
 stages := []struct {
     subject string
-    handler sdk.Handler[PipelineData, PipelineData]
+    handler athyr.Handler[PipelineData, PipelineData]
 }{
     // ... existing stages ...
     {SubjectTranslate, TranslateHandler(*model, "Spanish")},

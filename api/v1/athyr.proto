@@ -272,8 +272,8 @@ message StreamChunk {
 // Sent as the first chunk when durable=true in the request.
 message DurableStreamInfo {
   string request_id = 1;   // Unique identifier for this stream
-  string subject = 2;      // NATS subject to subscribe to for direct access
-  string stream = 3;       // JetStream stream name
+  string subject = 2;      // Athyr subject to subscribe to for direct access
+  string stream = 3;       //
 }
 
 // ResumeStreamRequest resumes consumption of a durable stream.
@@ -307,6 +307,7 @@ message SessionProfile {
 message CreateSessionRequest {
   string agent_id = 1;
   SessionProfile profile = 2;
+  string system_prompt = 3;  // Agent personality/instructions for this session
 }
 
 message GetSessionRequest {
@@ -339,6 +340,7 @@ message Session {
   SessionProfile profile = 6;
   google.protobuf.Timestamp created_at = 7;
   google.protobuf.Timestamp updated_at = 8;
+  string system_prompt = 9;  // Agent personality/instructions
 }
 
 message AddHintRequest {

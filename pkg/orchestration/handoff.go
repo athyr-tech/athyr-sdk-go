@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	sdk "github.com/athyr-tech/athyr-sdk-go/pkg/agent"
+	"github.com/athyr-tech/athyr-sdk-go/pkg/athyr"
 )
 
 // HandoffRouter provides dynamic task routing where a triage agent
@@ -85,7 +85,7 @@ type HandoffDecision struct {
 }
 
 // Handle processes a request through the handoff router.
-func (r *HandoffRouter) Handle(ctx context.Context, client sdk.Agent, input []byte) ([]byte, error) {
+func (r *HandoffRouter) Handle(ctx context.Context, client athyr.Agent, input []byte) ([]byte, error) {
 	trace, err := r.HandleWithTrace(ctx, client, input)
 	if err != nil {
 		return nil, err
@@ -94,7 +94,7 @@ func (r *HandoffRouter) Handle(ctx context.Context, client sdk.Agent, input []by
 }
 
 // HandleWithTrace processes a request and returns detailed routing trace.
-func (r *HandoffRouter) HandleWithTrace(ctx context.Context, client sdk.Agent, input []byte) (*HandoffTrace, error) {
+func (r *HandoffRouter) HandleWithTrace(ctx context.Context, client athyr.Agent, input []byte) (*HandoffTrace, error) {
 	if r.triage == "" {
 		return nil, &HandoffError{Err: fmt.Errorf("no triage agent configured")}
 	}
@@ -329,7 +329,7 @@ func (t *HandoffTrace) RouteNames() []string {
 type HandoffStep struct {
 	Index     int
 	Agent     string // Agent name (e.g., "triage", "billing")
-	Subject   string // NATS subject
+	Subject   string // Athyr subject
 	Route     string // Route returned by agent
 	Output    []byte
 	StartedAt time.Time

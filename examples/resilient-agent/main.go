@@ -27,7 +27,7 @@ import (
 	"syscall"
 	"time"
 
-	sdk "github.com/athyr-tech/athyr-sdk-go/pkg/agent"
+	"github.com/athyr-tech/athyr-sdk-go/pkg/athyr"
 )
 
 const (
@@ -61,14 +61,14 @@ func run(ctx context.Context) error {
 	fmt.Println("╚════════════════════════════════════════════╝")
 	fmt.Println()
 
-	client, err := sdk.NewAgent(athyrAddr,
-		sdk.WithAgentCard(sdk.AgentCard{
+	client, err := athyr.NewAgent(athyrAddr,
+		athyr.WithAgentCard(athyr.AgentCard{
 			Name:         "resilient-agent",
 			Description:  "Demonstrates graceful streaming error handling",
 			Version:      "1.0.0",
 			Capabilities: []string{"chat", "resilient"},
 		}),
-		sdk.WithHeartbeatInterval(30*time.Second),
+		athyr.WithHeartbeatInterval(30*time.Second),
 	)
 	if err != nil {
 		return fmt.Errorf("failed to create client: %w", err)
@@ -117,9 +117,9 @@ func run(ctx context.Context) error {
 
 		fmt.Print("\nAssistant: ")
 
-		req := sdk.CompletionRequest{
+		req := athyr.CompletionRequest{
 			Model: model,
-			Messages: []sdk.Message{
+			Messages: []athyr.Message{
 				{Role: "system", Content: "You are a helpful assistant. Be concise."},
 				{Role: "user", Content: input},
 			},
@@ -136,7 +136,7 @@ func run(ctx context.Context) error {
 
 // resilientStream attempts streaming with automatic error recovery.
 // It tries: same model retry → backup model → blocking mode.
-func resilientStream(ctx context.Context, client sdk.Agent, req sdk.CompletionRequest) error {
+func resilientStream(ctx context.Context, client athyr.Agent, req athyr.CompletionRequest) error {
 	var lastErr error
 
 	// Strategy 1: Try primary model with retries
@@ -147,7 +147,7 @@ func resilientStream(ctx context.Context, client sdk.Agent, req sdk.CompletionRe
 		}
 
 		lastErr = err
-		var streamErr *sdk.StreamError
+		var streamErr *athyr.StreamError
 		if errors.As(err, &streamErr) {
 			if streamErr.PartialResponse {
 				// Show recovery message inline
@@ -187,10 +187,10 @@ func resilientStream(ctx context.Context, client sdk.Agent, req sdk.CompletionRe
 }
 
 // streamWithRecovery performs a streaming request and handles StreamError.
-func streamWithRecovery(ctx context.Context, client sdk.Agent, req sdk.CompletionRequest, attempt int) error {
+func streamWithRecovery(ctx context.Context, client athyr.Agent, req athyr.CompletionRequest, attempt int) error {
 	var totalContent strings.Builder
 
-	err := client.CompleteStream(ctx, req, func(chunk sdk.StreamChunk) error {
+	err := client.CompleteStream(ctx, req, func(chunk athyr.StreamChunk) error {
 		fmt.Print(chunk.Content)
 		totalContent.WriteString(chunk.Content)
 		return nil
@@ -202,7 +202,7 @@ func streamWithRecovery(ctx context.Context, client sdk.Agent, req sdk.Completio
 	}
 
 	// Check if this is a StreamError with context
-	var streamErr *sdk.StreamError
+	var streamErr *athyr.StreamError
 	if errors.As(err, &streamErr) {
 		// Log details for debugging (in production, send to observability)
 		logStreamError(streamErr, attempt)
@@ -213,7 +213,7 @@ func streamWithRecovery(ctx context.Context, client sdk.Agent, req sdk.Completio
 }
 
 // logStreamError logs details about the streaming failure.
-func logStreamError(err *sdk.StreamError, attempt int) {
+func logStreamError(err *athyr.StreamError, attempt int) {
 	// In production, you'd send this to your observability stack
 	details := fmt.Sprintf(
 		"\n  Backend: %s | Partial: %v | Content: %d chars",

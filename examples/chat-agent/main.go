@@ -26,7 +26,7 @@ import (
 	"syscall"
 	"time"
 
-	sdk "github.com/athyr-tech/athyr-sdk-go/pkg/agent"
+	"github.com/athyr-tech/athyr-sdk-go/pkg/athyr"
 )
 
 const (
@@ -60,14 +60,14 @@ func run(ctx context.Context) error {
 	fmt.Println()
 
 	// Create SDK client
-	client, err := sdk.NewAgent(athyrAddr,
-		sdk.WithAgentCard(sdk.AgentCard{
+	client, err := athyr.NewAgent(athyrAddr,
+		athyr.WithAgentCard(athyr.AgentCard{
 			Name:         "chat-agent",
 			Description:  "Interactive chat assistant demonstrating Athyr SDK",
 			Version:      "1.0.0",
 			Capabilities: []string{"chat", "memory", "preferences"},
 		}),
-		sdk.WithHeartbeatInterval(30*time.Second),
+		athyr.WithHeartbeatInterval(30*time.Second),
 	)
 	if err != nil {
 		return fmt.Errorf("failed to create client: %w", err)
@@ -81,9 +81,9 @@ func run(ctx context.Context) error {
 	fmt.Printf("Connected! (Agent ID: %s)\n", client.AgentID())
 	defer func() { _ = client.Close() }()
 
-	// Create a memory session for this conversation
+	// Create a memory session for this conversation with a system prompt
 	fmt.Print("Creating memory session... ")
-	session, err := client.CreateSession(ctx, sdk.DefaultSessionProfile())
+	session, err := client.CreateSession(ctx, athyr.DefaultSessionProfile(), "You are a helpful assistant.")
 	if err != nil {
 		return fmt.Errorf("failed to create session: %w", err)
 	}
@@ -156,9 +156,9 @@ func run(ctx context.Context) error {
 		// Make LLM completion
 		fmt.Print("\nAssistant: ")
 
-		req := sdk.CompletionRequest{
+		req := athyr.CompletionRequest{
 			Model: model,
-			Messages: []sdk.Message{
+			Messages: []athyr.Message{
 				{Role: "system", Content: "You are a helpful assistant. Be concise."},
 				{Role: "user", Content: input},
 			},
@@ -167,7 +167,7 @@ func run(ctx context.Context) error {
 		}
 
 		if streaming {
-			err = client.CompleteStream(ctx, req, func(chunk sdk.StreamChunk) error {
+			err = client.CompleteStream(ctx, req, func(chunk athyr.StreamChunk) error {
 				if chunk.Error != "" {
 					return fmt.Errorf("stream error: %s", chunk.Error)
 				}
@@ -176,7 +176,7 @@ func run(ctx context.Context) error {
 			})
 			fmt.Println()
 		} else {
-			var resp *sdk.CompletionResponse
+			var resp *athyr.CompletionResponse
 			resp, err = client.Complete(ctx, req)
 			if err == nil {
 				fmt.Println(resp.Content)
@@ -195,9 +195,9 @@ func run(ctx context.Context) error {
 
 func handleCommand(
 	ctx context.Context,
-	client sdk.Agent,
+	client athyr.Agent,
 	sessionID string,
-	prefs sdk.KVBucket,
+	prefs athyr.KVBucket,
 	input string,
 	model *string,
 	streaming *bool,

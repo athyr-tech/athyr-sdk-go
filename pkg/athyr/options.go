@@ -1,4 +1,4 @@
-package agent
+package athyr
 
 import "time"
 
@@ -36,5 +36,13 @@ func WithHeartbeatInterval(d time.Duration) AgentOption {
 func WithRequestTimeout(d time.Duration) AgentOption {
 	return func(o *agentOptions) {
 		o.requestTimeout = d
+	}
+}
+
+// WithCapabilities sets the agent's capabilities.
+// Capabilities describe what the agent can do (e.g., "chat", "analysis").
+func WithCapabilities(caps ...string) AgentOption {
+	return func(o *agentOptions) {
+		o.agentCard.Capabilities = caps
 	}
 }

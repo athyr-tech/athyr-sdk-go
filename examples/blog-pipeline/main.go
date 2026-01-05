@@ -14,7 +14,7 @@ import (
 	"syscall"
 	"time"
 
-	sdk "github.com/athyr-tech/athyr-sdk-go/pkg/agent"
+	"github.com/athyr-tech/athyr-sdk-go/pkg/athyr"
 	"github.com/athyr-tech/athyr-sdk-go/pkg/orchestration"
 )
 
@@ -75,9 +75,9 @@ func run(ctx context.Context) error {
 }
 
 // connectToAthyr establishes connection to the Athyr server.
-func connectToAthyr(ctx context.Context) (sdk.Agent, error) {
-	agent, err := sdk.NewAgent(*athyrAddr,
-		sdk.WithAgentCard(sdk.AgentCard{
+func connectToAthyr(ctx context.Context) (athyr.Agent, error) {
+	agent, err := athyr.NewAgent(*athyrAddr,
+		athyr.WithAgentCard(athyr.AgentCard{
 			Name:         "blog-pipeline-demo",
 			Description:  "Blog post creation pipeline demonstrating orchestration patterns",
 			Version:      "1.0.0",
@@ -100,13 +100,13 @@ func connectToAthyr(ctx context.Context) (sdk.Agent, error) {
 
 // registerStages registers all pipeline stage handlers with Athyr.
 // Each stage is a typed handler that processes PipelineData.
-func registerStages(ctx context.Context, agent sdk.Agent) error {
+func registerStages(ctx context.Context, agent athyr.Agent) error {
 	fmt.Print("⚡ Registering pipeline stages... ")
 
 	// Define all stages with their handlers
 	stages := []struct {
 		subject string
-		handler sdk.Handler[PipelineData, PipelineData]
+		handler athyr.Handler[PipelineData, PipelineData]
 	}{
 		{SubjectOutline, OutlineHandler(*model)},
 		{SubjectDraft, DraftHandler(*model)},
@@ -127,13 +127,13 @@ func registerStages(ctx context.Context, agent sdk.Agent) error {
 }
 
 // registerHandler wraps a typed handler and registers it as a subscription.
-func registerHandler(ctx context.Context, agent sdk.Agent, subject string, handler sdk.Handler[PipelineData, PipelineData]) error {
+func registerHandler(ctx context.Context, agent athyr.Agent, subject string, handler athyr.Handler[PipelineData, PipelineData]) error {
 	// Use the Service abstraction to build the handler
-	svc := sdk.NewService(subject, handler)
+	svc := athyr.NewService(subject, handler)
 	builtHandler := svc.BuildHandler(nil)
 
 	// Subscribe with a message handler that bridges to our typed handler
-	_, err := agent.Subscribe(ctx, subject, func(msg sdk.SubscribeMessage) {
+	_, err := agent.Subscribe(ctx, subject, func(msg athyr.SubscribeMessage) {
 		svcCtx := &handlerContext{
 			Context: ctx,
 			agent:   agent,
@@ -157,7 +157,7 @@ func registerHandler(ctx context.Context, agent sdk.Agent, subject string, handl
 }
 
 // executePipeline creates and runs the blog creation pipeline.
-func executePipeline(ctx context.Context, agent sdk.Agent) error {
+func executePipeline(ctx context.Context, agent athyr.Agent) error {
 	fmt.Println()
 	fmt.Printf("📝 Topic: %s\n", *topic)
 	fmt.Printf("🤖 Model: %s\n", *model)
@@ -233,15 +233,15 @@ func printSummary(trace *orchestration.PipelineTrace, duration time.Duration, da
 	fmt.Printf("   Total tokens: ~%d\n", data.TotalTokens)
 }
 
-// handlerContext implements sdk.Context for message handlers.
+// handlerContext implements athyr.Context for message handlers.
 type handlerContext struct {
 	context.Context
-	agent   sdk.Agent
+	agent   athyr.Agent
 	subject string
 	reply   string
 }
 
-func (c *handlerContext) Agent() sdk.Agent      { return c.agent }
+func (c *handlerContext) Agent() athyr.Agent      { return c.agent }
 func (c *handlerContext) Subject() string       { return c.subject }
 func (c *handlerContext) ReplySubject() string  { return c.reply }
 

@@ -1193,8 +1193,8 @@ func (x *StreamChunk) GetSequence() uint64 {
 type DurableStreamInfo struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	RequestId     string                 `protobuf:"bytes,1,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"` // Unique identifier for this stream
-	Subject       string                 `protobuf:"bytes,2,opt,name=subject,proto3" json:"subject,omitempty"`                      // NATS subject to subscribe to for direct access
-	Stream        string                 `protobuf:"bytes,3,opt,name=stream,proto3" json:"stream,omitempty"`                        // JetStream stream name
+	Subject       string                 `protobuf:"bytes,2,opt,name=subject,proto3" json:"subject,omitempty"`                      // Athyr subject to subscribe to for direct access
+	Stream        string                 `protobuf:"bytes,3,opt,name=stream,proto3" json:"stream,omitempty"`                        //
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1523,6 +1523,7 @@ type CreateSessionRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	AgentId       string                 `protobuf:"bytes,1,opt,name=agent_id,json=agentId,proto3" json:"agent_id,omitempty"`
 	Profile       *SessionProfile        `protobuf:"bytes,2,opt,name=profile,proto3" json:"profile,omitempty"`
+	SystemPrompt  string                 `protobuf:"bytes,3,opt,name=system_prompt,json=systemPrompt,proto3" json:"system_prompt,omitempty"` // Agent personality/instructions for this session
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1569,6 +1570,13 @@ func (x *CreateSessionRequest) GetProfile() *SessionProfile {
 		return x.Profile
 	}
 	return nil
+}
+
+func (x *CreateSessionRequest) GetSystemPrompt() string {
+	if x != nil {
+		return x.SystemPrompt
+	}
+	return ""
 }
 
 type GetSessionRequest struct {
@@ -1797,6 +1805,7 @@ type Session struct {
 	Profile       *SessionProfile        `protobuf:"bytes,6,opt,name=profile,proto3" json:"profile,omitempty"`
 	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	SystemPrompt  string                 `protobuf:"bytes,9,opt,name=system_prompt,json=systemPrompt,proto3" json:"system_prompt,omitempty"` // Agent personality/instructions
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1885,6 +1894,13 @@ func (x *Session) GetUpdatedAt() *timestamppb.Timestamp {
 		return x.UpdatedAt
 	}
 	return nil
+}
+
+func (x *Session) GetSystemPrompt() string {
+	if x != nil {
+		return x.SystemPrompt
+	}
+	return ""
 }
 
 type AddHintRequest struct {
@@ -2542,10 +2558,11 @@ const file_athyr_proto_rawDesc = "" +
 	"\x04type\x18\x01 \x01(\tR\x04type\x12\x1d\n" +
 	"\n" +
 	"max_tokens\x18\x02 \x01(\x05R\tmaxTokens\x127\n" +
-	"\x17summarization_threshold\x18\x03 \x01(\x05R\x16summarizationThreshold\"e\n" +
+	"\x17summarization_threshold\x18\x03 \x01(\x05R\x16summarizationThreshold\"\x8a\x01\n" +
 	"\x14CreateSessionRequest\x12\x19\n" +
 	"\bagent_id\x18\x01 \x01(\tR\aagentId\x122\n" +
-	"\aprofile\x18\x02 \x01(\v2\x18.athyr.v1.SessionProfileR\aprofile\"M\n" +
+	"\aprofile\x18\x02 \x01(\v2\x18.athyr.v1.SessionProfileR\aprofile\x12#\n" +
+	"\rsystem_prompt\x18\x03 \x01(\tR\fsystemPrompt\"M\n" +
 	"\x11GetSessionRequest\x12\x19\n" +
 	"\bagent_id\x18\x01 \x01(\tR\aagentId\x12\x1d\n" +
 	"\n" +
@@ -2560,7 +2577,7 @@ const file_athyr_proto_rawDesc = "" +
 	"\x04role\x18\x01 \x01(\tR\x04role\x12\x18\n" +
 	"\acontent\x18\x02 \x01(\tR\acontent\x128\n" +
 	"\ttimestamp\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x12\x16\n" +
-	"\x06tokens\x18\x04 \x01(\x05R\x06tokens\"\xc4\x02\n" +
+	"\x06tokens\x18\x04 \x01(\x05R\x06tokens\"\xe9\x02\n" +
 	"\aSession\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x19\n" +
 	"\bagent_id\x18\x02 \x01(\tR\aagentId\x124\n" +
@@ -2571,7 +2588,8 @@ const file_athyr_proto_rawDesc = "" +
 	"\n" +
 	"created_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
 	"\n" +
-	"updated_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"^\n" +
+	"updated_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\x12#\n" +
+	"\rsystem_prompt\x18\t \x01(\tR\fsystemPrompt\"^\n" +
 	"\x0eAddHintRequest\x12\x19\n" +
 	"\bagent_id\x18\x01 \x01(\tR\aagentId\x12\x1d\n" +
 	"\n" +

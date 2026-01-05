@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	sdk "github.com/athyr-tech/athyr-sdk-go/pkg/agent"
+	"github.com/athyr-tech/athyr-sdk-go/pkg/athyr"
 )
 
 // GroupChat orchestrates multi-agent collaborative discussions where
@@ -105,7 +105,7 @@ type ChatResponse struct {
 
 // Discuss starts a group discussion on the given topic.
 // Returns the conclusion (last message) when discussion ends.
-func (g *GroupChat) Discuss(ctx context.Context, client sdk.Agent, topic []byte) ([]byte, error) {
+func (g *GroupChat) Discuss(ctx context.Context, client athyr.Agent, topic []byte) ([]byte, error) {
 	trace, err := g.DiscussWithTrace(ctx, client, topic)
 	if err != nil {
 		return nil, err
@@ -114,7 +114,7 @@ func (g *GroupChat) Discuss(ctx context.Context, client sdk.Agent, topic []byte)
 }
 
 // DiscussWithTrace runs the discussion and returns detailed trace.
-func (g *GroupChat) DiscussWithTrace(ctx context.Context, client sdk.Agent, topic []byte) (*ChatTrace, error) {
+func (g *GroupChat) DiscussWithTrace(ctx context.Context, client athyr.Agent, topic []byte) (*ChatTrace, error) {
 	if len(g.participants) == 0 {
 		return nil, &ChatError{Err: fmt.Errorf("no participants configured")}
 	}

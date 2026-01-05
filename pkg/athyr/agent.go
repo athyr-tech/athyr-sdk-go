@@ -1,4 +1,4 @@
-package agent
+package athyr
 
 import (
 	"context"
@@ -39,7 +39,7 @@ type Agent interface {
 	Models(ctx context.Context) ([]Model, error)
 
 	// Memory
-	CreateSession(ctx context.Context, profile SessionProfile) (*Session, error)
+	CreateSession(ctx context.Context, profile SessionProfile, systemPrompt string) (*Session, error)
 	GetSession(ctx context.Context, sessionID string) (*Session, error)
 	DeleteSession(ctx context.Context, sessionID string) error
 	AddHint(ctx context.Context, sessionID, hint string) error
@@ -440,7 +440,7 @@ func (c *agent) Models(ctx context.Context) ([]Model, error) {
 
 // ============ Memory ============
 
-func (c *agent) CreateSession(ctx context.Context, profile SessionProfile) (*Session, error) {
+func (c *agent) CreateSession(ctx context.Context, profile SessionProfile, systemPrompt string) (*Session, error) {
 	if err := c.checkConnected(); err != nil {
 		return nil, err
 	}
@@ -452,6 +452,7 @@ func (c *agent) CreateSession(ctx context.Context, profile SessionProfile) (*Ses
 			MaxTokens:              int32(profile.MaxTokens),
 			SummarizationThreshold: int32(profile.SummarizationThreshold),
 		},
+		SystemPrompt: systemPrompt,
 	})
 	if err != nil {
 		return nil, err
@@ -596,10 +597,11 @@ func (k *kvBucket) List(ctx context.Context, prefix string) ([]string, error) {
 
 func protoToSession(s *athyr.Session) *Session {
 	session := &Session{
-		ID:      s.Id,
-		AgentID: s.AgentId,
-		Summary: s.Summary,
-		Hints:   s.Hints,
+		ID:           s.Id,
+		AgentID:      s.AgentId,
+		SystemPrompt: s.SystemPrompt,
+		Summary:      s.Summary,
+		Hints:        s.Hints,
 	}
 
 	if s.CreatedAt != nil {
@@ -630,3 +632,4 @@ func protoToSession(s *athyr.Session) *Session {
 
 	return session
 }
+

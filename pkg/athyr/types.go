@@ -1,6 +1,6 @@
-// Package sdk provides a Go agent for the Athyr platform.
-// Agents use this SDK to connect, communicate, and access platform services.
-package agent
+// Package athyr provides a Go SDK for building agents on the Athyr platform.
+// Agents use this package to connect, communicate, and access platform services.
+package athyr
 
 import (
 	"fmt"
@@ -95,14 +95,15 @@ func DefaultSessionProfile() SessionProfile {
 
 // Session represents a memory session.
 type Session struct {
-	ID        string
-	AgentID   string
-	Messages  []SessionMessage
-	Summary   string
-	Hints     []string
-	Profile   SessionProfile
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID           string
+	AgentID      string
+	SystemPrompt string // Agent personality/instructions
+	Messages     []SessionMessage
+	Summary      string
+	Hints        []string
+	Profile      SessionProfile
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
 }
 
 // SessionMessage represents a message stored in session memory.

@@ -87,7 +87,7 @@ This example shows the recommended pattern for handling `StreamError`:
 ```go
 err := agent.CompleteStream(ctx, req, handler)
 if err != nil {
-    var streamErr *sdk.StreamError
+    var streamErr *athyr.StreamError
     if errors.As(err, &streamErr) {
         if streamErr.PartialResponse {
             // Some content was shown - decide recovery strategy
@@ -106,13 +106,13 @@ package main
 
 import (
     "context"
-    sdk "github.com/athyr-tech/athyr-sdk-go"
+    github.com/athyr-tech/athyr-sdk-go/pkg/athyr
 )
 
 func main() {
     // Create agent
-    agent, _ := sdk.NewAgent("localhost:9090",
-        sdk.WithAgentCard(sdk.AgentCard{
+    agent, _ := athyr.NewAgent("localhost:9090",
+        athyr.WithAgentCard(athyr.AgentCard{
             Name: "my-agent",
             Capabilities: []string{"chat"},
         }),
@@ -124,9 +124,9 @@ func main() {
     defer agent.Close()
 
     // Use LLM
-    resp, _ := agent.Complete(ctx, sdk.CompletionRequest{
+    resp, _ := agent.Complete(ctx, athyr.CompletionRequest{
         Model:    "llama3",
-        Messages: []sdk.Message{{Role: "user", Content: "Hello!"}},
+        Messages: []athyr.Message{{Role: "user", Content: "Hello!"}},
     })
     println(resp.Content)
 
@@ -134,8 +134,8 @@ func main() {
     kv := agent.KV("my-bucket")
     kv.Put(ctx, "key", []byte("value"))
 
-    // Use memory sessions
-    session, _ := agent.CreateSession(ctx, sdk.DefaultSessionProfile())
+    // Use memory sessions with system prompt
+    session, _ := agent.CreateSession(ctx, athyr.DefaultSessionProfile(), "You are a helpful assistant.")
     agent.AddHint(ctx, session.ID, "User prefers concise answers")
 }
 ```

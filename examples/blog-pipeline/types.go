@@ -22,7 +22,7 @@ type PipelineData struct {
 	TotalTokens int `json:"total_tokens"`
 }
 
-// Stage subjects define the NATS subjects for each pipeline stage.
+// Stage subjects define the Athyr subjects for each pipeline stage.
 // These subjects are used for both subscription and routing.
 const (
 	SubjectOutline = "demo.blog.outline"

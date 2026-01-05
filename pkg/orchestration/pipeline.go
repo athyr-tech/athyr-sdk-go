@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"time"
 
-	sdk "github.com/athyr-tech/athyr-sdk-go/pkg/agent"
+	"github.com/athyr-tech/athyr-sdk-go/pkg/athyr"
 )
 
 // Pipeline chains agents in sequential order where each agent
@@ -80,7 +80,7 @@ func (p *Pipeline) Step(name, subject string, opts ...StepOption) *Pipeline {
 
 // Execute runs the pipeline and returns the final result.
 // Each step receives the output of the previous step as input.
-func (p *Pipeline) Execute(ctx context.Context, client sdk.Agent, input []byte) ([]byte, error) {
+func (p *Pipeline) Execute(ctx context.Context, client athyr.Agent, input []byte) ([]byte, error) {
 	trace, err := p.ExecuteWithTrace(ctx, client, input)
 	if err != nil {
 		return nil, err
@@ -93,7 +93,7 @@ func (p *Pipeline) Execute(ctx context.Context, client sdk.Agent, input []byte) 
 
 // ExecuteWithTrace runs the pipeline and returns detailed execution trace.
 // Useful for debugging and monitoring.
-func (p *Pipeline) ExecuteWithTrace(ctx context.Context, client sdk.Agent, input []byte) (*PipelineTrace, error) {
+func (p *Pipeline) ExecuteWithTrace(ctx context.Context, client athyr.Agent, input []byte) (*PipelineTrace, error) {
 	trace := &PipelineTrace{
 		Pipeline:  p.name,
 		StartedAt: time.Now(),
