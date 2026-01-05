@@ -82,6 +82,28 @@ func NewAgent(addr string, opts ...AgentOption) (Agent, error) {
 	}, nil
 }
 
+// MustConnect creates and connects an agent, panicking on error.
+// Use this for initialization code where connection failure is unrecoverable.
+//
+// Example:
+//
+//	agent := sdk.MustConnect("localhost:9090",
+//	    sdk.WithName("my-agent"),
+//	)
+//	defer agent.Close()
+func MustConnect(addr string, opts ...AgentOption) Agent {
+	agent, err := NewAgent(addr, opts...)
+	if err != nil {
+		panic(fmt.Sprintf("athyr: failed to create agent: %v", err))
+	}
+
+	if err := agent.Connect(context.Background()); err != nil {
+		panic(fmt.Sprintf("athyr: failed to connect to %s: %v", addr, err))
+	}
+
+	return agent
+}
+
 // Connect establishes a connection and registers the agent.
 func (c *agent) Connect(ctx context.Context) error {
 	c.mu.Lock()
