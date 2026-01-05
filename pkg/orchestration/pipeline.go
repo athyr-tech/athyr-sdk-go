@@ -113,14 +113,18 @@ func (p *Pipeline) ExecuteWithTrace(ctx context.Context, client athyr.Agent, inp
 
 		// Apply step-level timeout if configured
 		stepCtx := ctx
+		var cancelStep context.CancelFunc
 		if step.opts.timeout > 0 {
-			var cancel context.CancelFunc
-			stepCtx, cancel = context.WithTimeout(ctx, step.opts.timeout)
-			defer cancel()
+			stepCtx, cancelStep = context.WithTimeout(ctx, step.opts.timeout)
 		}
 
 		// Execute the step
 		output, err := client.Request(stepCtx, step.subject, current)
+
+		// Cancel step context immediately to release resources
+		if cancelStep != nil {
+			cancelStep()
+		}
 		stepTrace.Duration = time.Since(stepTrace.StartedAt)
 
 		if err != nil {
