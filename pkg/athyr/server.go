@@ -2,6 +2,7 @@ package athyr
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"os"
 	"os/signal"
@@ -17,6 +18,11 @@ type Server struct {
 	version    string
 	services   []*Service
 	middleware []Middleware
+
+	// TLS configuration
+	tlsCertFile string
+	tlsConfig   *tls.Config
+	insecure    bool
 
 	agent Agent
 	subs  []Subscription
@@ -51,6 +57,29 @@ func WithVersion(version string) ServerOption {
 func WithMiddleware(mw ...Middleware) ServerOption {
 	return func(s *Server) {
 		s.middleware = append(s.middleware, mw...)
+	}
+}
+
+// WithServerTLS configures TLS using a CA certificate file.
+func WithServerTLS(certFile string) ServerOption {
+	return func(s *Server) {
+		s.tlsCertFile = certFile
+		s.insecure = false
+	}
+}
+
+// WithServerTLSConfig configures TLS with a custom tls.Config.
+func WithServerTLSConfig(cfg *tls.Config) ServerOption {
+	return func(s *Server) {
+		s.tlsConfig = cfg
+		s.insecure = false
+	}
+}
+
+// WithServerInsecure disables TLS for development and testing.
+func WithServerInsecure() ServerOption {
+	return func(s *Server) {
+		s.insecure = true
 	}
 }
 
@@ -96,12 +125,27 @@ func (s *Server) Run(ctx context.Context) error {
 		return fmt.Errorf("no services registered")
 	}
 
+	// Build agent options
+	agentOpts := []AgentOption{
+		WithAgentCard(AgentCard{
+			Name:        s.agentName,
+			Description: s.agentDesc,
+			Version:     s.version,
+		}),
+	}
+
+	// Add TLS options
+	switch {
+	case s.insecure:
+		agentOpts = append(agentOpts, WithInsecure())
+	case s.tlsConfig != nil:
+		agentOpts = append(agentOpts, WithTLSConfig(s.tlsConfig))
+	case s.tlsCertFile != "":
+		agentOpts = append(agentOpts, WithTLS(s.tlsCertFile))
+	}
+
 	// Create agent
-	agent, err := NewAgent(s.addr, WithAgentCard(AgentCard{
-		Name:        s.agentName,
-		Description: s.agentDesc,
-		Version:     s.version,
-	}))
+	agent, err := NewAgent(s.addr, agentOpts...)
 	if err != nil {
 		return fmt.Errorf("failed to create agent: %w", err)
 	}

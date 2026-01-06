@@ -3,11 +3,13 @@ package athyr
 import (
 	"context"
 	"fmt"
+	"log"
 	"sync"
 	"time"
 
 	athyr "github.com/athyr-tech/athyr-sdk-go/api/v1"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 )
 
@@ -97,8 +99,14 @@ func (c *agent) Connect(ctx context.Context) error {
 		return ErrAlreadyConnected
 	}
 
+	// Build transport credentials based on TLS options
+	creds, err := c.buildTransportCredentials()
+	if err != nil {
+		return fmt.Errorf("failed to configure TLS: %w", err)
+	}
+
 	// Establish gRPC connection
-	conn, err := grpc.NewClient(c.addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(c.addr, grpc.WithTransportCredentials(creds))
 	if err != nil {
 		return fmt.Errorf("failed to connect: %w", err)
 	}
@@ -185,6 +193,35 @@ func (c *agent) heartbeatLoop(ctx context.Context) {
 			c.athyr.Heartbeat(hbCtx, &athyr.HeartbeatRequest{AgentId: agentID})
 			cancel()
 		}
+	}
+}
+
+// buildTransportCredentials returns the appropriate gRPC transport credentials
+// based on the agent's TLS configuration.
+func (c *agent) buildTransportCredentials() (credentials.TransportCredentials, error) {
+	switch {
+	case c.opts.insecure:
+		// Explicit insecure mode for development
+		return insecure.NewCredentials(), nil
+
+	case c.opts.tlsConfig != nil:
+		// Custom TLS config provided
+		return credentials.NewTLS(c.opts.tlsConfig), nil
+
+	case c.opts.tlsCertFile != "":
+		// Load CA cert from file
+		creds, err := credentials.NewClientTLSFromFile(c.opts.tlsCertFile, "")
+		if err != nil {
+			return nil, fmt.Errorf("failed to load TLS cert %q: %w", c.opts.tlsCertFile, err)
+		}
+		return creds, nil
+
+	default:
+		// No TLS options specified - backwards compatibility mode
+		// Log warning and use insecure (will be removed in future version)
+		log.Println("athyr: WARNING: No TLS configured. Connection is insecure.")
+		log.Println("athyr: Use WithInsecure() to silence this warning, or WithSystemTLS()/WithTLS() for production.")
+		return insecure.NewCredentials(), nil
 	}
 }
 
