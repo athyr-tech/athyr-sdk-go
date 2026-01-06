@@ -77,10 +77,13 @@ cd examples/blog-pipeline
 docker compose build
 
 # Start all agents (background)
-docker compose up -d outline-agent draft-agent edit-agent seo-agent
+docker compose up -d
 
 # Run the orchestrator
 docker compose run --rm orchestrator --topic "AI in Healthcare"
+
+# Or run with a different Athyr server
+ATHYR_ADDR=athyr.example.com:9090 docker compose up -d
 ```
 
 ## Configuration
@@ -91,14 +94,14 @@ All agents accept:
 
 | Flag | Default | Description |
 |------|---------|-------------|
-| `--athyr` | `localhost:9090` | Athyr server address |
+| `--athyr` | `$ATHYR_ADDR` or `localhost:9090` | Athyr server address |
 | `--model` | `qwen3:4b` | LLM model to use |
 
 ### Orchestrator Flags
 
 | Flag | Default | Description |
 |------|---------|-------------|
-| `--athyr` | `localhost:9090` | Athyr server address |
+| `--athyr` | `$ATHYR_ADDR` or `localhost:9090` | Athyr server address |
 | `--topic` | (required) | Topic for the blog post |
 | `--output` | `blog-post.md` | Output file path |
 

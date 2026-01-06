@@ -22,8 +22,8 @@ import (
 )
 
 var (
-	athyrAddr = flag.String("athyr", types.DefaultAthyrAddr, "Athyr server address")
-	model     = flag.String("model", types.DefaultModel, "LLM model to use")
+	athyrAddr = flag.String("athyr", types.DefaultAthyrAddr(), "Athyr server address")
+	model     = flag.String("model", types.DefaultModel(), "LLM model to use")
 )
 
 func main() {

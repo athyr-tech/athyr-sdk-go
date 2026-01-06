@@ -27,9 +27,9 @@ import (
 )
 
 var (
-	athyrAddr = flag.String("athyr", types.DefaultAthyrAddr, "Athyr server address")
+	athyrAddr = flag.String("athyr", types.DefaultAthyrAddr(), "Athyr server address")
 	topic     = flag.String("topic", "", "Topic for the blog post (required)")
-	output    = flag.String("output", "blog-post.md", "Output file")
+	output    = flag.String("output", types.DefaultOutputPath(), "Output file")
 )
 
 func main() {

@@ -8,7 +8,7 @@
 #   docker build --build-arg AGENT=orchestrator -t orchestrator .
 
 # Build stage
-FROM golang:1.23-alpine AS builder
+FROM golang:1.24-alpine AS builder
 
 ARG AGENT
 RUN test -n "$AGENT" || (echo "AGENT build arg is required" && exit 1)
