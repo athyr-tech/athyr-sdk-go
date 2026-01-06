@@ -48,6 +48,8 @@ blog-pipeline/
 │   └── orchestrator/    # Pipeline controller
 ├── internal/
 │   └── types/           # Shared data structures
+├── output/              # Generated blog posts (Docker volume mount)
+├── .env.example         # Example environment configuration
 ├── Dockerfile           # Multi-stage build for any agent
 ├── docker-compose.yml   # Runs all agents as containers
 └── README.md
@@ -95,7 +97,7 @@ All agents accept:
 | Flag | Default | Description |
 |------|---------|-------------|
 | `--athyr` | `$ATHYR_ADDR` or `localhost:9090` | Athyr server address |
-| `--model` | `qwen3:4b` | LLM model to use |
+| `--model` | `$MODEL` or `qwen3:4b` | LLM model to use |
 
 ### Orchestrator Flags
 
@@ -103,7 +105,7 @@ All agents accept:
 |------|---------|-------------|
 | `--athyr` | `$ATHYR_ADDR` or `localhost:9090` | Athyr server address |
 | `--topic` | (required) | Topic for the blog post |
-| `--output` | `blog-post.md` | Output file path |
+| `--output` | `$OUTPUT_PATH` or `blog-post.md` | Output file path |
 
 ### Environment Variables (Docker)
 
@@ -111,6 +113,7 @@ All agents accept:
 |----------|---------|-------------|
 | `ATHYR_ADDR` | `host.docker.internal:9090` | Athyr server address |
 | `MODEL` | `qwen3:4b` | LLM model to use |
+| `OUTPUT_PATH` | `/app/output/blog-post.md` | Output file path (orchestrator only) |
 
 ## Key Concepts
 
