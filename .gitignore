@@ -19,6 +19,7 @@ vendor/
 bin/
 dist/
 build/
+third_party/
 
 # OS
 .DS_Store

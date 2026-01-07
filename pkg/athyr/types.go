@@ -2,7 +2,10 @@
 // Agents use this package to connect, communicate, and access platform services.
 package athyr
 
-import "time"
+import (
+	"encoding/json"
+	"time"
+)
 
 // AgentCard describes an agent's identity and capabilities.
 type AgentCard struct {
@@ -13,10 +16,26 @@ type AgentCard struct {
 	Metadata     map[string]string // Extensible key-value pairs
 }
 
+// Tool defines a function that the LLM can call.
+type Tool struct {
+	Name        string          // Function name (e.g., "get_weather")
+	Description string          // What the tool does
+	Parameters  json.RawMessage // JSON Schema defining input parameters
+}
+
+// ToolCall represents the LLM's request to invoke a tool.
+type ToolCall struct {
+	ID        string          // Unique identifier for this call
+	Name      string          // Tool name to invoke
+	Arguments json.RawMessage // JSON arguments
+}
+
 // Message represents a chat message in LLM conversations.
 type Message struct {
-	Role    string // "system", "user", "assistant"
-	Content string
+	Role       string     // "system", "user", "assistant", "tool"
+	Content    string     // Text content
+	ToolCalls  []ToolCall // Tool calls made by assistant (role="assistant")
+	ToolCallID string     // ID of the tool call this responds to (role="tool")
 }
 
 // CompletionConfig holds optional parameters for completions.
@@ -34,6 +53,8 @@ type CompletionRequest struct {
 	Config        CompletionConfig // Optional parameters
 	SessionID     string           // Optional: for memory injection
 	IncludeMemory bool             // Whether to inject memory context
+	Tools         []Tool           // Available tools the LLM can call
+	ToolChoice    string           // "auto", "none", "required", or specific tool name
 }
 
 // TokenUsage tracks token consumption.
@@ -49,18 +70,20 @@ type CompletionResponse struct {
 	Model        string
 	Backend      string
 	Usage        TokenUsage
-	FinishReason string
+	FinishReason string        // "stop", "length", "tool_calls"
 	Latency      time.Duration
+	ToolCalls    []ToolCall    // Tool calls requested by LLM
 }
 
 // StreamChunk represents a single chunk in a streaming response.
 type StreamChunk struct {
-	Content string
-	Done    bool
-	Usage   *TokenUsage // Only on final chunk
-	Model   string      // Only on final chunk
-	Backend string      // Only on final chunk
-	Error   string      // Error message if failed
+	Content   string
+	Done      bool
+	Usage     *TokenUsage // Only on final chunk
+	Model     string      // Only on final chunk
+	Backend   string      // Only on final chunk
+	Error     string      // Error message if failed
+	ToolCalls []ToolCall  // Tool calls (complete on final chunk only)
 }
 
 // StreamHandler is called for each chunk in a streaming response.

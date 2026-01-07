@@ -219,8 +219,26 @@ message ResponseMessage {
 // ============ LLM Messages ============
 
 message Message {
-  string role = 1;     // "system", "user", "assistant"
+  string role = 1;                    // "system", "user", "assistant", "tool"
   string content = 2;
+  repeated ToolCall tool_calls = 3;   // Tool calls made by assistant (role="assistant")
+  string tool_call_id = 4;            // ID of the tool call this message responds to (role="tool")
+}
+
+// Tool defines a function that the LLM can call.
+// Sent with CompletionRequest to describe available tools.
+message Tool {
+  string name = 1;         // Function name, e.g., "get_weather"
+  string description = 2;  // What the tool does
+  string parameters = 3;   // JSON Schema string defining input parameters
+}
+
+// ToolCall represents the LLM's request to invoke a tool.
+// Returned in CompletionResponse when the LLM decides to use a tool.
+message ToolCall {
+  string id = 1;         // Unique identifier for this call (from LLM)
+  string name = 2;       // Tool name to invoke
+  string arguments = 3;  // JSON string of arguments
 }
 
 message CompletionConfig {
@@ -238,6 +256,8 @@ message CompletionRequest {
   string session_id = 5;       // Optional: for memory injection
   bool include_memory = 6;     // Whether to inject memory context
   bool durable = 7;            // Enable disconnect recovery for streaming
+  repeated Tool tools = 8;     // Available tools the LLM can call
+  string tool_choice = 9;      // "auto", "none", "required", or tool name
 }
 
 message TokenUsage {
@@ -251,8 +271,9 @@ message CompletionResponse {
   string model = 2;
   string backend = 3;
   TokenUsage usage = 4;
-  string finish_reason = 5;
+  string finish_reason = 5;            // "stop", "length", "tool_calls"
   int64 latency_ms = 6;
+  repeated ToolCall tool_calls = 7;    // Tool calls requested by LLM
 }
 
 message StreamChunk {
@@ -266,14 +287,15 @@ message StreamChunk {
   bool partial_response = 8;         // True if some content was streamed before error
   DurableStreamInfo stream_info = 9; // Only on first chunk of durable streams
   uint64 sequence = 10;              // Sequence number for durable streams (for resume)
+  repeated ToolCall tool_calls = 11; // Tool calls (complete on final chunk only)
 }
 
 // DurableStreamInfo provides connection info for subscribing to a durable stream.
 // Sent as the first chunk when durable=true in the request.
 message DurableStreamInfo {
   string request_id = 1;   // Unique identifier for this stream
-  string subject = 2;      // Athyr subject to subscribe to for direct access
-  string stream = 3;       //
+  string subject = 2;      // NATS subject to subscribe to for direct access
+  string stream = 3;       // JetStream stream name
 }
 
 // ResumeStreamRequest resumes consumption of a durable stream.

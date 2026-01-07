@@ -22,7 +22,7 @@ func (c *agent) Complete(ctx context.Context, req CompletionRequest) (*Completio
 		return nil, wrapError("Complete", err)
 	}
 
-	return &CompletionResponse{
+	result := &CompletionResponse{
 		Content:      resp.Content,
 		Model:        resp.Model,
 		Backend:      resp.Backend,
@@ -33,7 +33,18 @@ func (c *agent) Complete(ctx context.Context, req CompletionRequest) (*Completio
 			CompletionTokens: int(resp.Usage.CompletionTokens),
 			TotalTokens:      int(resp.Usage.TotalTokens),
 		},
-	}, nil
+	}
+
+	// Parse tool calls from response
+	for _, tc := range resp.ToolCalls {
+		result.ToolCalls = append(result.ToolCalls, ToolCall{
+			ID:        tc.Id,
+			Name:      tc.Name,
+			Arguments: []byte(tc.Arguments),
+		})
+	}
+
+	return result, nil
 }
 
 // CompleteStream performs a streaming LLM completion.
@@ -92,6 +103,14 @@ func (c *agent) CompleteStream(ctx context.Context, req CompletionRequest, handl
 				TotalTokens:      int(chunk.Usage.TotalTokens),
 			}
 		}
+		// Parse tool calls (complete on final chunk)
+		for _, tc := range chunk.ToolCalls {
+			sdkChunk.ToolCalls = append(sdkChunk.ToolCalls, ToolCall{
+				ID:        tc.Id,
+				Name:      tc.Name,
+				Arguments: []byte(tc.Arguments),
+			})
+		}
 
 		if err := handler(sdkChunk); err != nil {
 			return err
@@ -130,6 +149,7 @@ func (c *agent) buildCompletionRequest(req CompletionRequest) *athyr.CompletionR
 		Model:         req.Model,
 		SessionId:     req.SessionID,
 		IncludeMemory: req.IncludeMemory,
+		ToolChoice:    req.ToolChoice,
 		Config: &athyr.CompletionConfig{
 			Temperature: req.Config.Temperature,
 			MaxTokens:   int32(req.Config.MaxTokens),
@@ -138,10 +158,30 @@ func (c *agent) buildCompletionRequest(req CompletionRequest) *athyr.CompletionR
 		},
 	}
 
+	// Convert messages, including tool calls
 	for _, msg := range req.Messages {
-		protoReq.Messages = append(protoReq.Messages, &athyr.Message{
-			Role:    msg.Role,
-			Content: msg.Content,
+		protoMsg := &athyr.Message{
+			Role:       msg.Role,
+			Content:    msg.Content,
+			ToolCallId: msg.ToolCallID,
+		}
+		// Convert tool calls for assistant messages
+		for _, tc := range msg.ToolCalls {
+			protoMsg.ToolCalls = append(protoMsg.ToolCalls, &athyr.ToolCall{
+				Id:        tc.ID,
+				Name:      tc.Name,
+				Arguments: string(tc.Arguments),
+			})
+		}
+		protoReq.Messages = append(protoReq.Messages, protoMsg)
+	}
+
+	// Convert tools
+	for _, tool := range req.Tools {
+		protoReq.Tools = append(protoReq.Tools, &athyr.Tool{
+			Name:        tool.Name,
+			Description: tool.Description,
+			Parameters:  string(tool.Parameters),
 		})
 	}
 

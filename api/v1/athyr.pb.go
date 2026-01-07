@@ -718,8 +718,10 @@ func (x *ResponseMessage) GetData() []byte {
 
 type Message struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Role          string                 `protobuf:"bytes,1,opt,name=role,proto3" json:"role,omitempty"` // "system", "user", "assistant"
+	Role          string                 `protobuf:"bytes,1,opt,name=role,proto3" json:"role,omitempty"` // "system", "user", "assistant", "tool"
 	Content       string                 `protobuf:"bytes,2,opt,name=content,proto3" json:"content,omitempty"`
+	ToolCalls     []*ToolCall            `protobuf:"bytes,3,rep,name=tool_calls,json=toolCalls,proto3" json:"tool_calls,omitempty"`      // Tool calls made by assistant (role="assistant")
+	ToolCallId    string                 `protobuf:"bytes,4,opt,name=tool_call_id,json=toolCallId,proto3" json:"tool_call_id,omitempty"` // ID of the tool call this message responds to (role="tool")
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -768,6 +770,144 @@ func (x *Message) GetContent() string {
 	return ""
 }
 
+func (x *Message) GetToolCalls() []*ToolCall {
+	if x != nil {
+		return x.ToolCalls
+	}
+	return nil
+}
+
+func (x *Message) GetToolCallId() string {
+	if x != nil {
+		return x.ToolCallId
+	}
+	return ""
+}
+
+// Tool defines a function that the LLM can call.
+// Sent with CompletionRequest to describe available tools.
+type Tool struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`               // Function name, e.g., "get_weather"
+	Description   string                 `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"` // What the tool does
+	Parameters    string                 `protobuf:"bytes,3,opt,name=parameters,proto3" json:"parameters,omitempty"`   // JSON Schema string defining input parameters
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Tool) Reset() {
+	*x = Tool{}
+	mi := &file_athyr_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Tool) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Tool) ProtoMessage() {}
+
+func (x *Tool) ProtoReflect() protoreflect.Message {
+	mi := &file_athyr_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Tool.ProtoReflect.Descriptor instead.
+func (*Tool) Descriptor() ([]byte, []int) {
+	return file_athyr_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *Tool) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *Tool) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
+func (x *Tool) GetParameters() string {
+	if x != nil {
+		return x.Parameters
+	}
+	return ""
+}
+
+// ToolCall represents the LLM's request to invoke a tool.
+// Returned in CompletionResponse when the LLM decides to use a tool.
+type ToolCall struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`               // Unique identifier for this call (from LLM)
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`           // Tool name to invoke
+	Arguments     string                 `protobuf:"bytes,3,opt,name=arguments,proto3" json:"arguments,omitempty"` // JSON string of arguments
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ToolCall) Reset() {
+	*x = ToolCall{}
+	mi := &file_athyr_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ToolCall) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ToolCall) ProtoMessage() {}
+
+func (x *ToolCall) ProtoReflect() protoreflect.Message {
+	mi := &file_athyr_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ToolCall.ProtoReflect.Descriptor instead.
+func (*ToolCall) Descriptor() ([]byte, []int) {
+	return file_athyr_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *ToolCall) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *ToolCall) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *ToolCall) GetArguments() string {
+	if x != nil {
+		return x.Arguments
+	}
+	return ""
+}
+
 type CompletionConfig struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Temperature   float64                `protobuf:"fixed64,1,opt,name=temperature,proto3" json:"temperature,omitempty"` // 0.0-1.0
@@ -780,7 +920,7 @@ type CompletionConfig struct {
 
 func (x *CompletionConfig) Reset() {
 	*x = CompletionConfig{}
-	mi := &file_athyr_proto_msgTypes[14]
+	mi := &file_athyr_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -792,7 +932,7 @@ func (x *CompletionConfig) String() string {
 func (*CompletionConfig) ProtoMessage() {}
 
 func (x *CompletionConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_athyr_proto_msgTypes[14]
+	mi := &file_athyr_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -805,7 +945,7 @@ func (x *CompletionConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CompletionConfig.ProtoReflect.Descriptor instead.
 func (*CompletionConfig) Descriptor() ([]byte, []int) {
-	return file_athyr_proto_rawDescGZIP(), []int{14}
+	return file_athyr_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *CompletionConfig) GetTemperature() float64 {
@@ -845,13 +985,15 @@ type CompletionRequest struct {
 	SessionId     string                 `protobuf:"bytes,5,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`              // Optional: for memory injection
 	IncludeMemory bool                   `protobuf:"varint,6,opt,name=include_memory,json=includeMemory,proto3" json:"include_memory,omitempty"` // Whether to inject memory context
 	Durable       bool                   `protobuf:"varint,7,opt,name=durable,proto3" json:"durable,omitempty"`                                  // Enable disconnect recovery for streaming
+	Tools         []*Tool                `protobuf:"bytes,8,rep,name=tools,proto3" json:"tools,omitempty"`                                       // Available tools the LLM can call
+	ToolChoice    string                 `protobuf:"bytes,9,opt,name=tool_choice,json=toolChoice,proto3" json:"tool_choice,omitempty"`           // "auto", "none", "required", or tool name
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CompletionRequest) Reset() {
 	*x = CompletionRequest{}
-	mi := &file_athyr_proto_msgTypes[15]
+	mi := &file_athyr_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -863,7 +1005,7 @@ func (x *CompletionRequest) String() string {
 func (*CompletionRequest) ProtoMessage() {}
 
 func (x *CompletionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_athyr_proto_msgTypes[15]
+	mi := &file_athyr_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -876,7 +1018,7 @@ func (x *CompletionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CompletionRequest.ProtoReflect.Descriptor instead.
 func (*CompletionRequest) Descriptor() ([]byte, []int) {
-	return file_athyr_proto_rawDescGZIP(), []int{15}
+	return file_athyr_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *CompletionRequest) GetAgentId() string {
@@ -928,6 +1070,20 @@ func (x *CompletionRequest) GetDurable() bool {
 	return false
 }
 
+func (x *CompletionRequest) GetTools() []*Tool {
+	if x != nil {
+		return x.Tools
+	}
+	return nil
+}
+
+func (x *CompletionRequest) GetToolChoice() string {
+	if x != nil {
+		return x.ToolChoice
+	}
+	return ""
+}
+
 type TokenUsage struct {
 	state            protoimpl.MessageState `protogen:"open.v1"`
 	PromptTokens     int32                  `protobuf:"varint,1,opt,name=prompt_tokens,json=promptTokens,proto3" json:"prompt_tokens,omitempty"`
@@ -939,7 +1095,7 @@ type TokenUsage struct {
 
 func (x *TokenUsage) Reset() {
 	*x = TokenUsage{}
-	mi := &file_athyr_proto_msgTypes[16]
+	mi := &file_athyr_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -951,7 +1107,7 @@ func (x *TokenUsage) String() string {
 func (*TokenUsage) ProtoMessage() {}
 
 func (x *TokenUsage) ProtoReflect() protoreflect.Message {
-	mi := &file_athyr_proto_msgTypes[16]
+	mi := &file_athyr_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -964,7 +1120,7 @@ func (x *TokenUsage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TokenUsage.ProtoReflect.Descriptor instead.
 func (*TokenUsage) Descriptor() ([]byte, []int) {
-	return file_athyr_proto_rawDescGZIP(), []int{16}
+	return file_athyr_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *TokenUsage) GetPromptTokens() int32 {
@@ -994,15 +1150,16 @@ type CompletionResponse struct {
 	Model         string                 `protobuf:"bytes,2,opt,name=model,proto3" json:"model,omitempty"`
 	Backend       string                 `protobuf:"bytes,3,opt,name=backend,proto3" json:"backend,omitempty"`
 	Usage         *TokenUsage            `protobuf:"bytes,4,opt,name=usage,proto3" json:"usage,omitempty"`
-	FinishReason  string                 `protobuf:"bytes,5,opt,name=finish_reason,json=finishReason,proto3" json:"finish_reason,omitempty"`
+	FinishReason  string                 `protobuf:"bytes,5,opt,name=finish_reason,json=finishReason,proto3" json:"finish_reason,omitempty"` // "stop", "length", "tool_calls"
 	LatencyMs     int64                  `protobuf:"varint,6,opt,name=latency_ms,json=latencyMs,proto3" json:"latency_ms,omitempty"`
+	ToolCalls     []*ToolCall            `protobuf:"bytes,7,rep,name=tool_calls,json=toolCalls,proto3" json:"tool_calls,omitempty"` // Tool calls requested by LLM
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CompletionResponse) Reset() {
 	*x = CompletionResponse{}
-	mi := &file_athyr_proto_msgTypes[17]
+	mi := &file_athyr_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1014,7 +1171,7 @@ func (x *CompletionResponse) String() string {
 func (*CompletionResponse) ProtoMessage() {}
 
 func (x *CompletionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_athyr_proto_msgTypes[17]
+	mi := &file_athyr_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1027,7 +1184,7 @@ func (x *CompletionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CompletionResponse.ProtoReflect.Descriptor instead.
 func (*CompletionResponse) Descriptor() ([]byte, []int) {
-	return file_athyr_proto_rawDescGZIP(), []int{17}
+	return file_athyr_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *CompletionResponse) GetContent() string {
@@ -1072,6 +1229,13 @@ func (x *CompletionResponse) GetLatencyMs() int64 {
 	return 0
 }
 
+func (x *CompletionResponse) GetToolCalls() []*ToolCall {
+	if x != nil {
+		return x.ToolCalls
+	}
+	return nil
+}
+
 type StreamChunk struct {
 	state              protoimpl.MessageState `protogen:"open.v1"`
 	Content            string                 `protobuf:"bytes,1,opt,name=content,proto3" json:"content,omitempty"`
@@ -1084,13 +1248,14 @@ type StreamChunk struct {
 	PartialResponse    bool                   `protobuf:"varint,8,opt,name=partial_response,json=partialResponse,proto3" json:"partial_response,omitempty"`         // True if some content was streamed before error
 	StreamInfo         *DurableStreamInfo     `protobuf:"bytes,9,opt,name=stream_info,json=streamInfo,proto3" json:"stream_info,omitempty"`                         // Only on first chunk of durable streams
 	Sequence           uint64                 `protobuf:"varint,10,opt,name=sequence,proto3" json:"sequence,omitempty"`                                             // Sequence number for durable streams (for resume)
+	ToolCalls          []*ToolCall            `protobuf:"bytes,11,rep,name=tool_calls,json=toolCalls,proto3" json:"tool_calls,omitempty"`                           // Tool calls (complete on final chunk only)
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
 
 func (x *StreamChunk) Reset() {
 	*x = StreamChunk{}
-	mi := &file_athyr_proto_msgTypes[18]
+	mi := &file_athyr_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1102,7 +1267,7 @@ func (x *StreamChunk) String() string {
 func (*StreamChunk) ProtoMessage() {}
 
 func (x *StreamChunk) ProtoReflect() protoreflect.Message {
-	mi := &file_athyr_proto_msgTypes[18]
+	mi := &file_athyr_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1115,7 +1280,7 @@ func (x *StreamChunk) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StreamChunk.ProtoReflect.Descriptor instead.
 func (*StreamChunk) Descriptor() ([]byte, []int) {
-	return file_athyr_proto_rawDescGZIP(), []int{18}
+	return file_athyr_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *StreamChunk) GetContent() string {
@@ -1188,20 +1353,27 @@ func (x *StreamChunk) GetSequence() uint64 {
 	return 0
 }
 
+func (x *StreamChunk) GetToolCalls() []*ToolCall {
+	if x != nil {
+		return x.ToolCalls
+	}
+	return nil
+}
+
 // DurableStreamInfo provides connection info for subscribing to a durable stream.
 // Sent as the first chunk when durable=true in the request.
 type DurableStreamInfo struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	RequestId     string                 `protobuf:"bytes,1,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"` // Unique identifier for this stream
-	Subject       string                 `protobuf:"bytes,2,opt,name=subject,proto3" json:"subject,omitempty"`                      // Athyr subject to subscribe to for direct access
-	Stream        string                 `protobuf:"bytes,3,opt,name=stream,proto3" json:"stream,omitempty"`                        //
+	Subject       string                 `protobuf:"bytes,2,opt,name=subject,proto3" json:"subject,omitempty"`                      // NATS subject to subscribe to for direct access
+	Stream        string                 `protobuf:"bytes,3,opt,name=stream,proto3" json:"stream,omitempty"`                        // JetStream stream name
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *DurableStreamInfo) Reset() {
 	*x = DurableStreamInfo{}
-	mi := &file_athyr_proto_msgTypes[19]
+	mi := &file_athyr_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1213,7 +1385,7 @@ func (x *DurableStreamInfo) String() string {
 func (*DurableStreamInfo) ProtoMessage() {}
 
 func (x *DurableStreamInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_athyr_proto_msgTypes[19]
+	mi := &file_athyr_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1226,7 +1398,7 @@ func (x *DurableStreamInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DurableStreamInfo.ProtoReflect.Descriptor instead.
 func (*DurableStreamInfo) Descriptor() ([]byte, []int) {
-	return file_athyr_proto_rawDescGZIP(), []int{19}
+	return file_athyr_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *DurableStreamInfo) GetRequestId() string {
@@ -1262,7 +1434,7 @@ type ResumeStreamRequest struct {
 
 func (x *ResumeStreamRequest) Reset() {
 	*x = ResumeStreamRequest{}
-	mi := &file_athyr_proto_msgTypes[20]
+	mi := &file_athyr_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1274,7 +1446,7 @@ func (x *ResumeStreamRequest) String() string {
 func (*ResumeStreamRequest) ProtoMessage() {}
 
 func (x *ResumeStreamRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_athyr_proto_msgTypes[20]
+	mi := &file_athyr_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1287,7 +1459,7 @@ func (x *ResumeStreamRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ResumeStreamRequest.ProtoReflect.Descriptor instead.
 func (*ResumeStreamRequest) Descriptor() ([]byte, []int) {
-	return file_athyr_proto_rawDescGZIP(), []int{20}
+	return file_athyr_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *ResumeStreamRequest) GetAgentId() string {
@@ -1319,7 +1491,7 @@ type ListModelsRequest struct {
 
 func (x *ListModelsRequest) Reset() {
 	*x = ListModelsRequest{}
-	mi := &file_athyr_proto_msgTypes[21]
+	mi := &file_athyr_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1331,7 +1503,7 @@ func (x *ListModelsRequest) String() string {
 func (*ListModelsRequest) ProtoMessage() {}
 
 func (x *ListModelsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_athyr_proto_msgTypes[21]
+	mi := &file_athyr_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1344,7 +1516,7 @@ func (x *ListModelsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListModelsRequest.ProtoReflect.Descriptor instead.
 func (*ListModelsRequest) Descriptor() ([]byte, []int) {
-	return file_athyr_proto_rawDescGZIP(), []int{21}
+	return file_athyr_proto_rawDescGZIP(), []int{23}
 }
 
 type Model struct {
@@ -1359,7 +1531,7 @@ type Model struct {
 
 func (x *Model) Reset() {
 	*x = Model{}
-	mi := &file_athyr_proto_msgTypes[22]
+	mi := &file_athyr_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1371,7 +1543,7 @@ func (x *Model) String() string {
 func (*Model) ProtoMessage() {}
 
 func (x *Model) ProtoReflect() protoreflect.Message {
-	mi := &file_athyr_proto_msgTypes[22]
+	mi := &file_athyr_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1384,7 +1556,7 @@ func (x *Model) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Model.ProtoReflect.Descriptor instead.
 func (*Model) Descriptor() ([]byte, []int) {
-	return file_athyr_proto_rawDescGZIP(), []int{22}
+	return file_athyr_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *Model) GetId() string {
@@ -1424,7 +1596,7 @@ type ListModelsResponse struct {
 
 func (x *ListModelsResponse) Reset() {
 	*x = ListModelsResponse{}
-	mi := &file_athyr_proto_msgTypes[23]
+	mi := &file_athyr_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1436,7 +1608,7 @@ func (x *ListModelsResponse) String() string {
 func (*ListModelsResponse) ProtoMessage() {}
 
 func (x *ListModelsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_athyr_proto_msgTypes[23]
+	mi := &file_athyr_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1449,7 +1621,7 @@ func (x *ListModelsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListModelsResponse.ProtoReflect.Descriptor instead.
 func (*ListModelsResponse) Descriptor() ([]byte, []int) {
-	return file_athyr_proto_rawDescGZIP(), []int{23}
+	return file_athyr_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *ListModelsResponse) GetModels() []*Model {
@@ -1470,7 +1642,7 @@ type SessionProfile struct {
 
 func (x *SessionProfile) Reset() {
 	*x = SessionProfile{}
-	mi := &file_athyr_proto_msgTypes[24]
+	mi := &file_athyr_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1482,7 +1654,7 @@ func (x *SessionProfile) String() string {
 func (*SessionProfile) ProtoMessage() {}
 
 func (x *SessionProfile) ProtoReflect() protoreflect.Message {
-	mi := &file_athyr_proto_msgTypes[24]
+	mi := &file_athyr_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1495,7 +1667,7 @@ func (x *SessionProfile) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SessionProfile.ProtoReflect.Descriptor instead.
 func (*SessionProfile) Descriptor() ([]byte, []int) {
-	return file_athyr_proto_rawDescGZIP(), []int{24}
+	return file_athyr_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *SessionProfile) GetType() string {
@@ -1530,7 +1702,7 @@ type CreateSessionRequest struct {
 
 func (x *CreateSessionRequest) Reset() {
 	*x = CreateSessionRequest{}
-	mi := &file_athyr_proto_msgTypes[25]
+	mi := &file_athyr_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1542,7 +1714,7 @@ func (x *CreateSessionRequest) String() string {
 func (*CreateSessionRequest) ProtoMessage() {}
 
 func (x *CreateSessionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_athyr_proto_msgTypes[25]
+	mi := &file_athyr_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1555,7 +1727,7 @@ func (x *CreateSessionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateSessionRequest.ProtoReflect.Descriptor instead.
 func (*CreateSessionRequest) Descriptor() ([]byte, []int) {
-	return file_athyr_proto_rawDescGZIP(), []int{25}
+	return file_athyr_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *CreateSessionRequest) GetAgentId() string {
@@ -1589,7 +1761,7 @@ type GetSessionRequest struct {
 
 func (x *GetSessionRequest) Reset() {
 	*x = GetSessionRequest{}
-	mi := &file_athyr_proto_msgTypes[26]
+	mi := &file_athyr_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1601,7 +1773,7 @@ func (x *GetSessionRequest) String() string {
 func (*GetSessionRequest) ProtoMessage() {}
 
 func (x *GetSessionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_athyr_proto_msgTypes[26]
+	mi := &file_athyr_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1614,7 +1786,7 @@ func (x *GetSessionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetSessionRequest.ProtoReflect.Descriptor instead.
 func (*GetSessionRequest) Descriptor() ([]byte, []int) {
-	return file_athyr_proto_rawDescGZIP(), []int{26}
+	return file_athyr_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *GetSessionRequest) GetAgentId() string {
@@ -1641,7 +1813,7 @@ type DeleteSessionRequest struct {
 
 func (x *DeleteSessionRequest) Reset() {
 	*x = DeleteSessionRequest{}
-	mi := &file_athyr_proto_msgTypes[27]
+	mi := &file_athyr_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1653,7 +1825,7 @@ func (x *DeleteSessionRequest) String() string {
 func (*DeleteSessionRequest) ProtoMessage() {}
 
 func (x *DeleteSessionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_athyr_proto_msgTypes[27]
+	mi := &file_athyr_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1666,7 +1838,7 @@ func (x *DeleteSessionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteSessionRequest.ProtoReflect.Descriptor instead.
 func (*DeleteSessionRequest) Descriptor() ([]byte, []int) {
-	return file_athyr_proto_rawDescGZIP(), []int{27}
+	return file_athyr_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *DeleteSessionRequest) GetAgentId() string {
@@ -1692,7 +1864,7 @@ type DeleteSessionResponse struct {
 
 func (x *DeleteSessionResponse) Reset() {
 	*x = DeleteSessionResponse{}
-	mi := &file_athyr_proto_msgTypes[28]
+	mi := &file_athyr_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1704,7 +1876,7 @@ func (x *DeleteSessionResponse) String() string {
 func (*DeleteSessionResponse) ProtoMessage() {}
 
 func (x *DeleteSessionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_athyr_proto_msgTypes[28]
+	mi := &file_athyr_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1717,7 +1889,7 @@ func (x *DeleteSessionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteSessionResponse.ProtoReflect.Descriptor instead.
 func (*DeleteSessionResponse) Descriptor() ([]byte, []int) {
-	return file_athyr_proto_rawDescGZIP(), []int{28}
+	return file_athyr_proto_rawDescGZIP(), []int{30}
 }
 
 func (x *DeleteSessionResponse) GetOk() bool {
@@ -1739,7 +1911,7 @@ type SessionMessage struct {
 
 func (x *SessionMessage) Reset() {
 	*x = SessionMessage{}
-	mi := &file_athyr_proto_msgTypes[29]
+	mi := &file_athyr_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1751,7 +1923,7 @@ func (x *SessionMessage) String() string {
 func (*SessionMessage) ProtoMessage() {}
 
 func (x *SessionMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_athyr_proto_msgTypes[29]
+	mi := &file_athyr_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1764,7 +1936,7 @@ func (x *SessionMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SessionMessage.ProtoReflect.Descriptor instead.
 func (*SessionMessage) Descriptor() ([]byte, []int) {
-	return file_athyr_proto_rawDescGZIP(), []int{29}
+	return file_athyr_proto_rawDescGZIP(), []int{31}
 }
 
 func (x *SessionMessage) GetRole() string {
@@ -1812,7 +1984,7 @@ type Session struct {
 
 func (x *Session) Reset() {
 	*x = Session{}
-	mi := &file_athyr_proto_msgTypes[30]
+	mi := &file_athyr_proto_msgTypes[32]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1824,7 +1996,7 @@ func (x *Session) String() string {
 func (*Session) ProtoMessage() {}
 
 func (x *Session) ProtoReflect() protoreflect.Message {
-	mi := &file_athyr_proto_msgTypes[30]
+	mi := &file_athyr_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1837,7 +2009,7 @@ func (x *Session) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Session.ProtoReflect.Descriptor instead.
 func (*Session) Descriptor() ([]byte, []int) {
-	return file_athyr_proto_rawDescGZIP(), []int{30}
+	return file_athyr_proto_rawDescGZIP(), []int{32}
 }
 
 func (x *Session) GetId() string {
@@ -1914,7 +2086,7 @@ type AddHintRequest struct {
 
 func (x *AddHintRequest) Reset() {
 	*x = AddHintRequest{}
-	mi := &file_athyr_proto_msgTypes[31]
+	mi := &file_athyr_proto_msgTypes[33]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1926,7 +2098,7 @@ func (x *AddHintRequest) String() string {
 func (*AddHintRequest) ProtoMessage() {}
 
 func (x *AddHintRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_athyr_proto_msgTypes[31]
+	mi := &file_athyr_proto_msgTypes[33]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1939,7 +2111,7 @@ func (x *AddHintRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AddHintRequest.ProtoReflect.Descriptor instead.
 func (*AddHintRequest) Descriptor() ([]byte, []int) {
-	return file_athyr_proto_rawDescGZIP(), []int{31}
+	return file_athyr_proto_rawDescGZIP(), []int{33}
 }
 
 func (x *AddHintRequest) GetAgentId() string {
@@ -1972,7 +2144,7 @@ type AddHintResponse struct {
 
 func (x *AddHintResponse) Reset() {
 	*x = AddHintResponse{}
-	mi := &file_athyr_proto_msgTypes[32]
+	mi := &file_athyr_proto_msgTypes[34]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1984,7 +2156,7 @@ func (x *AddHintResponse) String() string {
 func (*AddHintResponse) ProtoMessage() {}
 
 func (x *AddHintResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_athyr_proto_msgTypes[32]
+	mi := &file_athyr_proto_msgTypes[34]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1997,7 +2169,7 @@ func (x *AddHintResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AddHintResponse.ProtoReflect.Descriptor instead.
 func (*AddHintResponse) Descriptor() ([]byte, []int) {
-	return file_athyr_proto_rawDescGZIP(), []int{32}
+	return file_athyr_proto_rawDescGZIP(), []int{34}
 }
 
 func (x *AddHintResponse) GetOk() bool {
@@ -2018,7 +2190,7 @@ type KVGetRequest struct {
 
 func (x *KVGetRequest) Reset() {
 	*x = KVGetRequest{}
-	mi := &file_athyr_proto_msgTypes[33]
+	mi := &file_athyr_proto_msgTypes[35]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2030,7 +2202,7 @@ func (x *KVGetRequest) String() string {
 func (*KVGetRequest) ProtoMessage() {}
 
 func (x *KVGetRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_athyr_proto_msgTypes[33]
+	mi := &file_athyr_proto_msgTypes[35]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2043,7 +2215,7 @@ func (x *KVGetRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use KVGetRequest.ProtoReflect.Descriptor instead.
 func (*KVGetRequest) Descriptor() ([]byte, []int) {
-	return file_athyr_proto_rawDescGZIP(), []int{33}
+	return file_athyr_proto_rawDescGZIP(), []int{35}
 }
 
 func (x *KVGetRequest) GetAgentId() string {
@@ -2077,7 +2249,7 @@ type KVGetResponse struct {
 
 func (x *KVGetResponse) Reset() {
 	*x = KVGetResponse{}
-	mi := &file_athyr_proto_msgTypes[34]
+	mi := &file_athyr_proto_msgTypes[36]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2089,7 +2261,7 @@ func (x *KVGetResponse) String() string {
 func (*KVGetResponse) ProtoMessage() {}
 
 func (x *KVGetResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_athyr_proto_msgTypes[34]
+	mi := &file_athyr_proto_msgTypes[36]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2102,7 +2274,7 @@ func (x *KVGetResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use KVGetResponse.ProtoReflect.Descriptor instead.
 func (*KVGetResponse) Descriptor() ([]byte, []int) {
-	return file_athyr_proto_rawDescGZIP(), []int{34}
+	return file_athyr_proto_rawDescGZIP(), []int{36}
 }
 
 func (x *KVGetResponse) GetValue() []byte {
@@ -2131,7 +2303,7 @@ type KVPutRequest struct {
 
 func (x *KVPutRequest) Reset() {
 	*x = KVPutRequest{}
-	mi := &file_athyr_proto_msgTypes[35]
+	mi := &file_athyr_proto_msgTypes[37]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2143,7 +2315,7 @@ func (x *KVPutRequest) String() string {
 func (*KVPutRequest) ProtoMessage() {}
 
 func (x *KVPutRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_athyr_proto_msgTypes[35]
+	mi := &file_athyr_proto_msgTypes[37]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2156,7 +2328,7 @@ func (x *KVPutRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use KVPutRequest.ProtoReflect.Descriptor instead.
 func (*KVPutRequest) Descriptor() ([]byte, []int) {
-	return file_athyr_proto_rawDescGZIP(), []int{35}
+	return file_athyr_proto_rawDescGZIP(), []int{37}
 }
 
 func (x *KVPutRequest) GetAgentId() string {
@@ -2196,7 +2368,7 @@ type KVPutResponse struct {
 
 func (x *KVPutResponse) Reset() {
 	*x = KVPutResponse{}
-	mi := &file_athyr_proto_msgTypes[36]
+	mi := &file_athyr_proto_msgTypes[38]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2208,7 +2380,7 @@ func (x *KVPutResponse) String() string {
 func (*KVPutResponse) ProtoMessage() {}
 
 func (x *KVPutResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_athyr_proto_msgTypes[36]
+	mi := &file_athyr_proto_msgTypes[38]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2221,7 +2393,7 @@ func (x *KVPutResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use KVPutResponse.ProtoReflect.Descriptor instead.
 func (*KVPutResponse) Descriptor() ([]byte, []int) {
-	return file_athyr_proto_rawDescGZIP(), []int{36}
+	return file_athyr_proto_rawDescGZIP(), []int{38}
 }
 
 func (x *KVPutResponse) GetRevision() uint64 {
@@ -2242,7 +2414,7 @@ type KVDeleteRequest struct {
 
 func (x *KVDeleteRequest) Reset() {
 	*x = KVDeleteRequest{}
-	mi := &file_athyr_proto_msgTypes[37]
+	mi := &file_athyr_proto_msgTypes[39]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2254,7 +2426,7 @@ func (x *KVDeleteRequest) String() string {
 func (*KVDeleteRequest) ProtoMessage() {}
 
 func (x *KVDeleteRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_athyr_proto_msgTypes[37]
+	mi := &file_athyr_proto_msgTypes[39]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2267,7 +2439,7 @@ func (x *KVDeleteRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use KVDeleteRequest.ProtoReflect.Descriptor instead.
 func (*KVDeleteRequest) Descriptor() ([]byte, []int) {
-	return file_athyr_proto_rawDescGZIP(), []int{37}
+	return file_athyr_proto_rawDescGZIP(), []int{39}
 }
 
 func (x *KVDeleteRequest) GetAgentId() string {
@@ -2300,7 +2472,7 @@ type KVDeleteResponse struct {
 
 func (x *KVDeleteResponse) Reset() {
 	*x = KVDeleteResponse{}
-	mi := &file_athyr_proto_msgTypes[38]
+	mi := &file_athyr_proto_msgTypes[40]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2312,7 +2484,7 @@ func (x *KVDeleteResponse) String() string {
 func (*KVDeleteResponse) ProtoMessage() {}
 
 func (x *KVDeleteResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_athyr_proto_msgTypes[38]
+	mi := &file_athyr_proto_msgTypes[40]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2325,7 +2497,7 @@ func (x *KVDeleteResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use KVDeleteResponse.ProtoReflect.Descriptor instead.
 func (*KVDeleteResponse) Descriptor() ([]byte, []int) {
-	return file_athyr_proto_rawDescGZIP(), []int{38}
+	return file_athyr_proto_rawDescGZIP(), []int{40}
 }
 
 func (x *KVDeleteResponse) GetOk() bool {
@@ -2346,7 +2518,7 @@ type KVListRequest struct {
 
 func (x *KVListRequest) Reset() {
 	*x = KVListRequest{}
-	mi := &file_athyr_proto_msgTypes[39]
+	mi := &file_athyr_proto_msgTypes[41]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2358,7 +2530,7 @@ func (x *KVListRequest) String() string {
 func (*KVListRequest) ProtoMessage() {}
 
 func (x *KVListRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_athyr_proto_msgTypes[39]
+	mi := &file_athyr_proto_msgTypes[41]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2371,7 +2543,7 @@ func (x *KVListRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use KVListRequest.ProtoReflect.Descriptor instead.
 func (*KVListRequest) Descriptor() ([]byte, []int) {
-	return file_athyr_proto_rawDescGZIP(), []int{39}
+	return file_athyr_proto_rawDescGZIP(), []int{41}
 }
 
 func (x *KVListRequest) GetAgentId() string {
@@ -2404,7 +2576,7 @@ type KVListResponse struct {
 
 func (x *KVListResponse) Reset() {
 	*x = KVListResponse{}
-	mi := &file_athyr_proto_msgTypes[40]
+	mi := &file_athyr_proto_msgTypes[42]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2416,7 +2588,7 @@ func (x *KVListResponse) String() string {
 func (*KVListResponse) ProtoMessage() {}
 
 func (x *KVListResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_athyr_proto_msgTypes[40]
+	mi := &file_athyr_proto_msgTypes[42]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2429,7 +2601,7 @@ func (x *KVListResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use KVListResponse.ProtoReflect.Descriptor instead.
 func (*KVListResponse) Descriptor() ([]byte, []int) {
-	return file_athyr_proto_rawDescGZIP(), []int{40}
+	return file_athyr_proto_rawDescGZIP(), []int{42}
 }
 
 func (x *KVListResponse) GetKeys() []string {
@@ -2491,16 +2663,30 @@ const file_athyr_proto_rawDesc = "" +
 	"\n" +
 	"timeout_ms\x18\x04 \x01(\x03R\ttimeoutMs\"%\n" +
 	"\x0fResponseMessage\x12\x12\n" +
-	"\x04data\x18\x01 \x01(\fR\x04data\"7\n" +
+	"\x04data\x18\x01 \x01(\fR\x04data\"\x8c\x01\n" +
 	"\aMessage\x12\x12\n" +
 	"\x04role\x18\x01 \x01(\tR\x04role\x12\x18\n" +
-	"\acontent\x18\x02 \x01(\tR\acontent\"|\n" +
+	"\acontent\x18\x02 \x01(\tR\acontent\x121\n" +
+	"\n" +
+	"tool_calls\x18\x03 \x03(\v2\x12.athyr.v1.ToolCallR\ttoolCalls\x12 \n" +
+	"\ftool_call_id\x18\x04 \x01(\tR\n" +
+	"toolCallId\"\\\n" +
+	"\x04Tool\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12 \n" +
+	"\vdescription\x18\x02 \x01(\tR\vdescription\x12\x1e\n" +
+	"\n" +
+	"parameters\x18\x03 \x01(\tR\n" +
+	"parameters\"L\n" +
+	"\bToolCall\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1c\n" +
+	"\targuments\x18\x03 \x01(\tR\targuments\"|\n" +
 	"\x10CompletionConfig\x12 \n" +
 	"\vtemperature\x18\x01 \x01(\x01R\vtemperature\x12\x1d\n" +
 	"\n" +
 	"max_tokens\x18\x02 \x01(\x05R\tmaxTokens\x12\x13\n" +
 	"\x05top_p\x18\x03 \x01(\x01R\x04topP\x12\x12\n" +
-	"\x04stop\x18\x04 \x03(\tR\x04stop\"\x87\x02\n" +
+	"\x04stop\x18\x04 \x03(\tR\x04stop\"\xce\x02\n" +
 	"\x11CompletionRequest\x12\x19\n" +
 	"\bagent_id\x18\x01 \x01(\tR\aagentId\x12\x14\n" +
 	"\x05model\x18\x02 \x01(\tR\x05model\x12-\n" +
@@ -2509,12 +2695,15 @@ const file_athyr_proto_rawDesc = "" +
 	"\n" +
 	"session_id\x18\x05 \x01(\tR\tsessionId\x12%\n" +
 	"\x0einclude_memory\x18\x06 \x01(\bR\rincludeMemory\x12\x18\n" +
-	"\adurable\x18\a \x01(\bR\adurable\"\x81\x01\n" +
+	"\adurable\x18\a \x01(\bR\adurable\x12$\n" +
+	"\x05tools\x18\b \x03(\v2\x0e.athyr.v1.ToolR\x05tools\x12\x1f\n" +
+	"\vtool_choice\x18\t \x01(\tR\n" +
+	"toolChoice\"\x81\x01\n" +
 	"\n" +
 	"TokenUsage\x12#\n" +
 	"\rprompt_tokens\x18\x01 \x01(\x05R\fpromptTokens\x12+\n" +
 	"\x11completion_tokens\x18\x02 \x01(\x05R\x10completionTokens\x12!\n" +
-	"\ftotal_tokens\x18\x03 \x01(\x05R\vtotalTokens\"\xce\x01\n" +
+	"\ftotal_tokens\x18\x03 \x01(\x05R\vtotalTokens\"\x81\x02\n" +
 	"\x12CompletionResponse\x12\x18\n" +
 	"\acontent\x18\x01 \x01(\tR\acontent\x12\x14\n" +
 	"\x05model\x18\x02 \x01(\tR\x05model\x12\x18\n" +
@@ -2522,7 +2711,9 @@ const file_athyr_proto_rawDesc = "" +
 	"\x05usage\x18\x04 \x01(\v2\x14.athyr.v1.TokenUsageR\x05usage\x12#\n" +
 	"\rfinish_reason\x18\x05 \x01(\tR\ffinishReason\x12\x1d\n" +
 	"\n" +
-	"latency_ms\x18\x06 \x01(\x03R\tlatencyMs\"\xe3\x02\n" +
+	"latency_ms\x18\x06 \x01(\x03R\tlatencyMs\x121\n" +
+	"\n" +
+	"tool_calls\x18\a \x03(\v2\x12.athyr.v1.ToolCallR\ttoolCalls\"\x96\x03\n" +
 	"\vStreamChunk\x12\x18\n" +
 	"\acontent\x18\x01 \x01(\tR\acontent\x12\x12\n" +
 	"\x04done\x18\x02 \x01(\bR\x04done\x12*\n" +
@@ -2535,7 +2726,9 @@ const file_athyr_proto_rawDesc = "" +
 	"\vstream_info\x18\t \x01(\v2\x1b.athyr.v1.DurableStreamInfoR\n" +
 	"streamInfo\x12\x1a\n" +
 	"\bsequence\x18\n" +
-	" \x01(\x04R\bsequence\"d\n" +
+	" \x01(\x04R\bsequence\x121\n" +
+	"\n" +
+	"tool_calls\x18\v \x03(\v2\x12.athyr.v1.ToolCallR\ttoolCalls\"d\n" +
 	"\x11DurableStreamInfo\x12\x1d\n" +
 	"\n" +
 	"request_id\x18\x01 \x01(\tR\trequestId\x12\x18\n" +
@@ -2659,7 +2852,7 @@ func file_athyr_proto_rawDescGZIP() []byte {
 	return file_athyr_proto_rawDescData
 }
 
-var file_athyr_proto_msgTypes = make([]protoimpl.MessageInfo, 42)
+var file_athyr_proto_msgTypes = make([]protoimpl.MessageInfo, 44)
 var file_athyr_proto_goTypes = []any{
 	(*AgentCard)(nil),             // 0: athyr.v1.AgentCard
 	(*ConnectRequest)(nil),        // 1: athyr.v1.ConnectRequest
@@ -2675,94 +2868,100 @@ var file_athyr_proto_goTypes = []any{
 	(*RequestMessage)(nil),        // 11: athyr.v1.RequestMessage
 	(*ResponseMessage)(nil),       // 12: athyr.v1.ResponseMessage
 	(*Message)(nil),               // 13: athyr.v1.Message
-	(*CompletionConfig)(nil),      // 14: athyr.v1.CompletionConfig
-	(*CompletionRequest)(nil),     // 15: athyr.v1.CompletionRequest
-	(*TokenUsage)(nil),            // 16: athyr.v1.TokenUsage
-	(*CompletionResponse)(nil),    // 17: athyr.v1.CompletionResponse
-	(*StreamChunk)(nil),           // 18: athyr.v1.StreamChunk
-	(*DurableStreamInfo)(nil),     // 19: athyr.v1.DurableStreamInfo
-	(*ResumeStreamRequest)(nil),   // 20: athyr.v1.ResumeStreamRequest
-	(*ListModelsRequest)(nil),     // 21: athyr.v1.ListModelsRequest
-	(*Model)(nil),                 // 22: athyr.v1.Model
-	(*ListModelsResponse)(nil),    // 23: athyr.v1.ListModelsResponse
-	(*SessionProfile)(nil),        // 24: athyr.v1.SessionProfile
-	(*CreateSessionRequest)(nil),  // 25: athyr.v1.CreateSessionRequest
-	(*GetSessionRequest)(nil),     // 26: athyr.v1.GetSessionRequest
-	(*DeleteSessionRequest)(nil),  // 27: athyr.v1.DeleteSessionRequest
-	(*DeleteSessionResponse)(nil), // 28: athyr.v1.DeleteSessionResponse
-	(*SessionMessage)(nil),        // 29: athyr.v1.SessionMessage
-	(*Session)(nil),               // 30: athyr.v1.Session
-	(*AddHintRequest)(nil),        // 31: athyr.v1.AddHintRequest
-	(*AddHintResponse)(nil),       // 32: athyr.v1.AddHintResponse
-	(*KVGetRequest)(nil),          // 33: athyr.v1.KVGetRequest
-	(*KVGetResponse)(nil),         // 34: athyr.v1.KVGetResponse
-	(*KVPutRequest)(nil),          // 35: athyr.v1.KVPutRequest
-	(*KVPutResponse)(nil),         // 36: athyr.v1.KVPutResponse
-	(*KVDeleteRequest)(nil),       // 37: athyr.v1.KVDeleteRequest
-	(*KVDeleteResponse)(nil),      // 38: athyr.v1.KVDeleteResponse
-	(*KVListRequest)(nil),         // 39: athyr.v1.KVListRequest
-	(*KVListResponse)(nil),        // 40: athyr.v1.KVListResponse
-	nil,                           // 41: athyr.v1.AgentCard.MetadataEntry
-	(*timestamppb.Timestamp)(nil), // 42: google.protobuf.Timestamp
+	(*Tool)(nil),                  // 14: athyr.v1.Tool
+	(*ToolCall)(nil),              // 15: athyr.v1.ToolCall
+	(*CompletionConfig)(nil),      // 16: athyr.v1.CompletionConfig
+	(*CompletionRequest)(nil),     // 17: athyr.v1.CompletionRequest
+	(*TokenUsage)(nil),            // 18: athyr.v1.TokenUsage
+	(*CompletionResponse)(nil),    // 19: athyr.v1.CompletionResponse
+	(*StreamChunk)(nil),           // 20: athyr.v1.StreamChunk
+	(*DurableStreamInfo)(nil),     // 21: athyr.v1.DurableStreamInfo
+	(*ResumeStreamRequest)(nil),   // 22: athyr.v1.ResumeStreamRequest
+	(*ListModelsRequest)(nil),     // 23: athyr.v1.ListModelsRequest
+	(*Model)(nil),                 // 24: athyr.v1.Model
+	(*ListModelsResponse)(nil),    // 25: athyr.v1.ListModelsResponse
+	(*SessionProfile)(nil),        // 26: athyr.v1.SessionProfile
+	(*CreateSessionRequest)(nil),  // 27: athyr.v1.CreateSessionRequest
+	(*GetSessionRequest)(nil),     // 28: athyr.v1.GetSessionRequest
+	(*DeleteSessionRequest)(nil),  // 29: athyr.v1.DeleteSessionRequest
+	(*DeleteSessionResponse)(nil), // 30: athyr.v1.DeleteSessionResponse
+	(*SessionMessage)(nil),        // 31: athyr.v1.SessionMessage
+	(*Session)(nil),               // 32: athyr.v1.Session
+	(*AddHintRequest)(nil),        // 33: athyr.v1.AddHintRequest
+	(*AddHintResponse)(nil),       // 34: athyr.v1.AddHintResponse
+	(*KVGetRequest)(nil),          // 35: athyr.v1.KVGetRequest
+	(*KVGetResponse)(nil),         // 36: athyr.v1.KVGetResponse
+	(*KVPutRequest)(nil),          // 37: athyr.v1.KVPutRequest
+	(*KVPutResponse)(nil),         // 38: athyr.v1.KVPutResponse
+	(*KVDeleteRequest)(nil),       // 39: athyr.v1.KVDeleteRequest
+	(*KVDeleteResponse)(nil),      // 40: athyr.v1.KVDeleteResponse
+	(*KVListRequest)(nil),         // 41: athyr.v1.KVListRequest
+	(*KVListResponse)(nil),        // 42: athyr.v1.KVListResponse
+	nil,                           // 43: athyr.v1.AgentCard.MetadataEntry
+	(*timestamppb.Timestamp)(nil), // 44: google.protobuf.Timestamp
 }
 var file_athyr_proto_depIdxs = []int32{
-	41, // 0: athyr.v1.AgentCard.metadata:type_name -> athyr.v1.AgentCard.MetadataEntry
+	43, // 0: athyr.v1.AgentCard.metadata:type_name -> athyr.v1.AgentCard.MetadataEntry
 	0,  // 1: athyr.v1.ConnectRequest.agent_card:type_name -> athyr.v1.AgentCard
-	42, // 2: athyr.v1.ConnectResponse.connected_at:type_name -> google.protobuf.Timestamp
-	42, // 3: athyr.v1.HeartbeatResponse.server_time:type_name -> google.protobuf.Timestamp
-	13, // 4: athyr.v1.CompletionRequest.messages:type_name -> athyr.v1.Message
-	14, // 5: athyr.v1.CompletionRequest.config:type_name -> athyr.v1.CompletionConfig
-	16, // 6: athyr.v1.CompletionResponse.usage:type_name -> athyr.v1.TokenUsage
-	16, // 7: athyr.v1.StreamChunk.usage:type_name -> athyr.v1.TokenUsage
-	19, // 8: athyr.v1.StreamChunk.stream_info:type_name -> athyr.v1.DurableStreamInfo
-	22, // 9: athyr.v1.ListModelsResponse.models:type_name -> athyr.v1.Model
-	24, // 10: athyr.v1.CreateSessionRequest.profile:type_name -> athyr.v1.SessionProfile
-	42, // 11: athyr.v1.SessionMessage.timestamp:type_name -> google.protobuf.Timestamp
-	29, // 12: athyr.v1.Session.messages:type_name -> athyr.v1.SessionMessage
-	24, // 13: athyr.v1.Session.profile:type_name -> athyr.v1.SessionProfile
-	42, // 14: athyr.v1.Session.created_at:type_name -> google.protobuf.Timestamp
-	42, // 15: athyr.v1.Session.updated_at:type_name -> google.protobuf.Timestamp
-	1,  // 16: athyr.v1.Athyr.Connect:input_type -> athyr.v1.ConnectRequest
-	3,  // 17: athyr.v1.Athyr.Heartbeat:input_type -> athyr.v1.HeartbeatRequest
-	5,  // 18: athyr.v1.Athyr.Disconnect:input_type -> athyr.v1.DisconnectRequest
-	7,  // 19: athyr.v1.Athyr.Publish:input_type -> athyr.v1.PublishRequest
-	9,  // 20: athyr.v1.Athyr.Subscribe:input_type -> athyr.v1.SubscribeRequest
-	11, // 21: athyr.v1.Athyr.Request:input_type -> athyr.v1.RequestMessage
-	15, // 22: athyr.v1.Athyr.Complete:input_type -> athyr.v1.CompletionRequest
-	15, // 23: athyr.v1.Athyr.CompleteStream:input_type -> athyr.v1.CompletionRequest
-	20, // 24: athyr.v1.Athyr.ResumeStream:input_type -> athyr.v1.ResumeStreamRequest
-	21, // 25: athyr.v1.Athyr.ListModels:input_type -> athyr.v1.ListModelsRequest
-	25, // 26: athyr.v1.Athyr.CreateSession:input_type -> athyr.v1.CreateSessionRequest
-	26, // 27: athyr.v1.Athyr.GetSession:input_type -> athyr.v1.GetSessionRequest
-	27, // 28: athyr.v1.Athyr.DeleteSession:input_type -> athyr.v1.DeleteSessionRequest
-	31, // 29: athyr.v1.Athyr.AddHint:input_type -> athyr.v1.AddHintRequest
-	33, // 30: athyr.v1.Athyr.KVGet:input_type -> athyr.v1.KVGetRequest
-	35, // 31: athyr.v1.Athyr.KVPut:input_type -> athyr.v1.KVPutRequest
-	37, // 32: athyr.v1.Athyr.KVDelete:input_type -> athyr.v1.KVDeleteRequest
-	39, // 33: athyr.v1.Athyr.KVList:input_type -> athyr.v1.KVListRequest
-	2,  // 34: athyr.v1.Athyr.Connect:output_type -> athyr.v1.ConnectResponse
-	4,  // 35: athyr.v1.Athyr.Heartbeat:output_type -> athyr.v1.HeartbeatResponse
-	6,  // 36: athyr.v1.Athyr.Disconnect:output_type -> athyr.v1.DisconnectResponse
-	8,  // 37: athyr.v1.Athyr.Publish:output_type -> athyr.v1.PublishResponse
-	10, // 38: athyr.v1.Athyr.Subscribe:output_type -> athyr.v1.SubscribeMessage
-	12, // 39: athyr.v1.Athyr.Request:output_type -> athyr.v1.ResponseMessage
-	17, // 40: athyr.v1.Athyr.Complete:output_type -> athyr.v1.CompletionResponse
-	18, // 41: athyr.v1.Athyr.CompleteStream:output_type -> athyr.v1.StreamChunk
-	18, // 42: athyr.v1.Athyr.ResumeStream:output_type -> athyr.v1.StreamChunk
-	23, // 43: athyr.v1.Athyr.ListModels:output_type -> athyr.v1.ListModelsResponse
-	30, // 44: athyr.v1.Athyr.CreateSession:output_type -> athyr.v1.Session
-	30, // 45: athyr.v1.Athyr.GetSession:output_type -> athyr.v1.Session
-	28, // 46: athyr.v1.Athyr.DeleteSession:output_type -> athyr.v1.DeleteSessionResponse
-	32, // 47: athyr.v1.Athyr.AddHint:output_type -> athyr.v1.AddHintResponse
-	34, // 48: athyr.v1.Athyr.KVGet:output_type -> athyr.v1.KVGetResponse
-	36, // 49: athyr.v1.Athyr.KVPut:output_type -> athyr.v1.KVPutResponse
-	38, // 50: athyr.v1.Athyr.KVDelete:output_type -> athyr.v1.KVDeleteResponse
-	40, // 51: athyr.v1.Athyr.KVList:output_type -> athyr.v1.KVListResponse
-	34, // [34:52] is the sub-list for method output_type
-	16, // [16:34] is the sub-list for method input_type
-	16, // [16:16] is the sub-list for extension type_name
-	16, // [16:16] is the sub-list for extension extendee
-	0,  // [0:16] is the sub-list for field type_name
+	44, // 2: athyr.v1.ConnectResponse.connected_at:type_name -> google.protobuf.Timestamp
+	44, // 3: athyr.v1.HeartbeatResponse.server_time:type_name -> google.protobuf.Timestamp
+	15, // 4: athyr.v1.Message.tool_calls:type_name -> athyr.v1.ToolCall
+	13, // 5: athyr.v1.CompletionRequest.messages:type_name -> athyr.v1.Message
+	16, // 6: athyr.v1.CompletionRequest.config:type_name -> athyr.v1.CompletionConfig
+	14, // 7: athyr.v1.CompletionRequest.tools:type_name -> athyr.v1.Tool
+	18, // 8: athyr.v1.CompletionResponse.usage:type_name -> athyr.v1.TokenUsage
+	15, // 9: athyr.v1.CompletionResponse.tool_calls:type_name -> athyr.v1.ToolCall
+	18, // 10: athyr.v1.StreamChunk.usage:type_name -> athyr.v1.TokenUsage
+	21, // 11: athyr.v1.StreamChunk.stream_info:type_name -> athyr.v1.DurableStreamInfo
+	15, // 12: athyr.v1.StreamChunk.tool_calls:type_name -> athyr.v1.ToolCall
+	24, // 13: athyr.v1.ListModelsResponse.models:type_name -> athyr.v1.Model
+	26, // 14: athyr.v1.CreateSessionRequest.profile:type_name -> athyr.v1.SessionProfile
+	44, // 15: athyr.v1.SessionMessage.timestamp:type_name -> google.protobuf.Timestamp
+	31, // 16: athyr.v1.Session.messages:type_name -> athyr.v1.SessionMessage
+	26, // 17: athyr.v1.Session.profile:type_name -> athyr.v1.SessionProfile
+	44, // 18: athyr.v1.Session.created_at:type_name -> google.protobuf.Timestamp
+	44, // 19: athyr.v1.Session.updated_at:type_name -> google.protobuf.Timestamp
+	1,  // 20: athyr.v1.Athyr.Connect:input_type -> athyr.v1.ConnectRequest
+	3,  // 21: athyr.v1.Athyr.Heartbeat:input_type -> athyr.v1.HeartbeatRequest
+	5,  // 22: athyr.v1.Athyr.Disconnect:input_type -> athyr.v1.DisconnectRequest
+	7,  // 23: athyr.v1.Athyr.Publish:input_type -> athyr.v1.PublishRequest
+	9,  // 24: athyr.v1.Athyr.Subscribe:input_type -> athyr.v1.SubscribeRequest
+	11, // 25: athyr.v1.Athyr.Request:input_type -> athyr.v1.RequestMessage
+	17, // 26: athyr.v1.Athyr.Complete:input_type -> athyr.v1.CompletionRequest
+	17, // 27: athyr.v1.Athyr.CompleteStream:input_type -> athyr.v1.CompletionRequest
+	22, // 28: athyr.v1.Athyr.ResumeStream:input_type -> athyr.v1.ResumeStreamRequest
+	23, // 29: athyr.v1.Athyr.ListModels:input_type -> athyr.v1.ListModelsRequest
+	27, // 30: athyr.v1.Athyr.CreateSession:input_type -> athyr.v1.CreateSessionRequest
+	28, // 31: athyr.v1.Athyr.GetSession:input_type -> athyr.v1.GetSessionRequest
+	29, // 32: athyr.v1.Athyr.DeleteSession:input_type -> athyr.v1.DeleteSessionRequest
+	33, // 33: athyr.v1.Athyr.AddHint:input_type -> athyr.v1.AddHintRequest
+	35, // 34: athyr.v1.Athyr.KVGet:input_type -> athyr.v1.KVGetRequest
+	37, // 35: athyr.v1.Athyr.KVPut:input_type -> athyr.v1.KVPutRequest
+	39, // 36: athyr.v1.Athyr.KVDelete:input_type -> athyr.v1.KVDeleteRequest
+	41, // 37: athyr.v1.Athyr.KVList:input_type -> athyr.v1.KVListRequest
+	2,  // 38: athyr.v1.Athyr.Connect:output_type -> athyr.v1.ConnectResponse
+	4,  // 39: athyr.v1.Athyr.Heartbeat:output_type -> athyr.v1.HeartbeatResponse
+	6,  // 40: athyr.v1.Athyr.Disconnect:output_type -> athyr.v1.DisconnectResponse
+	8,  // 41: athyr.v1.Athyr.Publish:output_type -> athyr.v1.PublishResponse
+	10, // 42: athyr.v1.Athyr.Subscribe:output_type -> athyr.v1.SubscribeMessage
+	12, // 43: athyr.v1.Athyr.Request:output_type -> athyr.v1.ResponseMessage
+	19, // 44: athyr.v1.Athyr.Complete:output_type -> athyr.v1.CompletionResponse
+	20, // 45: athyr.v1.Athyr.CompleteStream:output_type -> athyr.v1.StreamChunk
+	20, // 46: athyr.v1.Athyr.ResumeStream:output_type -> athyr.v1.StreamChunk
+	25, // 47: athyr.v1.Athyr.ListModels:output_type -> athyr.v1.ListModelsResponse
+	32, // 48: athyr.v1.Athyr.CreateSession:output_type -> athyr.v1.Session
+	32, // 49: athyr.v1.Athyr.GetSession:output_type -> athyr.v1.Session
+	30, // 50: athyr.v1.Athyr.DeleteSession:output_type -> athyr.v1.DeleteSessionResponse
+	34, // 51: athyr.v1.Athyr.AddHint:output_type -> athyr.v1.AddHintResponse
+	36, // 52: athyr.v1.Athyr.KVGet:output_type -> athyr.v1.KVGetResponse
+	38, // 53: athyr.v1.Athyr.KVPut:output_type -> athyr.v1.KVPutResponse
+	40, // 54: athyr.v1.Athyr.KVDelete:output_type -> athyr.v1.KVDeleteResponse
+	42, // 55: athyr.v1.Athyr.KVList:output_type -> athyr.v1.KVListResponse
+	38, // [38:56] is the sub-list for method output_type
+	20, // [20:38] is the sub-list for method input_type
+	20, // [20:20] is the sub-list for extension type_name
+	20, // [20:20] is the sub-list for extension extendee
+	0,  // [0:20] is the sub-list for field type_name
 }
 
 func init() { file_athyr_proto_init() }
@@ -2776,7 +2975,7 @@ func file_athyr_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_athyr_proto_rawDesc), len(file_athyr_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   42,
+			NumMessages:   44,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

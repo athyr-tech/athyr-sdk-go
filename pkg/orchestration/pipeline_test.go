@@ -63,6 +63,7 @@ func (m *mockAgent) Connect(ctx context.Context) error { return nil }
 func (m *mockAgent) Close() error                      { return nil }
 func (m *mockAgent) AgentID() string                   { return "mock-agent" }
 func (m *mockAgent) Connected() bool                   { return true }
+func (m *mockAgent) State() athyr.ConnectionState      { return athyr.StateConnected }
 func (m *mockAgent) Publish(ctx context.Context, subject string, data []byte) error {
 	return nil
 }
