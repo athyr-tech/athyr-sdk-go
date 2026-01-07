@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-func TestLogger(t *testing.T) {
+func TestLogRequests(t *testing.T) {
 	var buf bytes.Buffer
 	logger := log.New(&buf, "", 0)
 
@@ -19,7 +19,7 @@ func TestLogger(t *testing.T) {
 		return []byte("response"), nil
 	}
 
-	wrapped := Logger(logger)(handler)
+	wrapped := LogRequests(logger)(handler)
 	ctx := newMockContext()
 	ctx.subject = "test.log"
 
@@ -43,7 +43,7 @@ func TestLogger(t *testing.T) {
 	}
 }
 
-func TestLogger_Error(t *testing.T) {
+func TestLogRequests_Error(t *testing.T) {
 	var buf bytes.Buffer
 	logger := log.New(&buf, "", 0)
 
@@ -51,7 +51,7 @@ func TestLogger_Error(t *testing.T) {
 		return nil, BadRequest("invalid")
 	}
 
-	wrapped := Logger(logger)(handler)
+	wrapped := LogRequests(logger)(handler)
 	ctx := newMockContext()
 
 	_, err := wrapped(ctx, nil)
@@ -65,13 +65,13 @@ func TestLogger_Error(t *testing.T) {
 	}
 }
 
-func TestLogger_NilLogger(t *testing.T) {
+func TestLogRequests_NilLogger(t *testing.T) {
 	// Should not panic with nil logger
 	handler := func(ctx Context, data []byte) ([]byte, error) {
 		return []byte("ok"), nil
 	}
 
-	wrapped := Logger(nil)(handler)
+	wrapped := LogRequests(nil)(handler)
 	ctx := newMockContext()
 
 	_, err := wrapped(ctx, nil)

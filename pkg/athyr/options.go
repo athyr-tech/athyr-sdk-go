@@ -17,12 +17,16 @@ type agentOptions struct {
 	tlsCertFile string      // Path to CA cert file (PEM)
 	tlsConfig   *tls.Config // Custom TLS config (advanced)
 	insecure    bool        // Explicit opt-in for insecure connections
+
+	// Observability
+	logger Logger
 }
 
 func defaultOptions() agentOptions {
 	return agentOptions{
 		heartbeatInterval: 30 * time.Second,
 		requestTimeout:    60 * time.Second,
+		logger:            nopLogger{},
 	}
 }
 
@@ -115,5 +119,22 @@ func WithTLSConfig(cfg *tls.Config) AgentOption {
 func WithInsecure() AgentOption {
 	return func(o *agentOptions) {
 		o.insecure = true
+	}
+}
+
+// WithLogger sets a logger for observability.
+// The logger interface is compatible with slog.Logger, zap.SugaredLogger, and similar.
+// By default, no logging is performed.
+//
+// Example with slog:
+//
+//	agent, _ := athyr.NewAgent("localhost:9090",
+//	    athyr.WithLogger(slog.Default()),
+//	)
+func WithLogger(logger Logger) AgentOption {
+	return func(o *agentOptions) {
+		if logger != nil {
+			o.logger = logger
+		}
 	}
 }

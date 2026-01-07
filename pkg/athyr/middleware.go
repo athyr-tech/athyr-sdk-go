@@ -8,9 +8,9 @@ import (
 	"time"
 )
 
-// Logger returns middleware that logs requests and responses.
+// LogRequests returns middleware that logs requests and responses.
 // It logs the subject, duration, and any errors.
-func Logger(logger *log.Logger) Middleware {
+func LogRequests(logger *log.Logger) Middleware {
 	if logger == nil {
 		logger = log.Default()
 	}

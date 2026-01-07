@@ -3,7 +3,6 @@ package athyr
 import (
 	"context"
 	"fmt"
-	"log"
 	"sync"
 	"time"
 
@@ -131,6 +130,8 @@ func (c *agent) Connect(ctx context.Context) error {
 	c.agentID = resp.AgentId
 	c.connected = true
 
+	c.opts.logger.Info("connected to athyr", "addr", c.addr, "agent_id", c.agentID)
+
 	// Start heartbeat loop
 	hbCtx, cancel := context.WithCancel(context.Background())
 	c.heartbeatCancel = cancel
@@ -157,6 +158,8 @@ func (c *agent) Close() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	c.athyr.Disconnect(ctx, &athyr.DisconnectRequest{AgentId: c.agentID})
+
+	c.opts.logger.Info("disconnected from athyr", "agent_id", c.agentID)
 
 	c.connected = false
 	return c.conn.Close()
@@ -190,8 +193,12 @@ func (c *agent) heartbeatLoop(ctx context.Context) {
 			c.mu.RUnlock()
 
 			hbCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
-			c.athyr.Heartbeat(hbCtx, &athyr.HeartbeatRequest{AgentId: agentID})
+			_, err := c.athyr.Heartbeat(hbCtx, &athyr.HeartbeatRequest{AgentId: agentID})
 			cancel()
+
+			if err != nil {
+				c.opts.logger.Error("heartbeat failed", "error", err)
+			}
 		}
 	}
 }
@@ -219,8 +226,8 @@ func (c *agent) buildTransportCredentials() (credentials.TransportCredentials, e
 	default:
 		// No TLS options specified - backwards compatibility mode
 		// Log warning and use insecure (will be removed in future version)
-		log.Println("athyr: WARNING: No TLS configured. Connection is insecure.")
-		log.Println("athyr: Use WithInsecure() to silence this warning, or WithSystemTLS()/WithTLS() for production.")
+		c.opts.logger.Warn("no TLS configured, connection is insecure",
+			"hint", "use WithInsecure() to silence this warning, or WithSystemTLS()/WithTLS() for production")
 		return insecure.NewCredentials(), nil
 	}
 }
