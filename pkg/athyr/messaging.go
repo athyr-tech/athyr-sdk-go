@@ -45,8 +45,15 @@ func (c *agent) subscribe(ctx context.Context, subject, queue string, handler Me
 	}
 
 	sub := &subscription{
-		cancel: func() { stream.CloseSend() },
+		agent:   c,
+		subject: subject,
+		queue:   queue,
+		handler: handler,
+		cancel:  func() { stream.CloseSend() },
 	}
+
+	// Track subscription for reconnection recovery
+	c.trackSubscription(subject, queue, handler)
 
 	go func() {
 		for {
@@ -86,10 +93,52 @@ func (c *agent) Request(ctx context.Context, subject string, data []byte) ([]byt
 
 // subscription implements Subscription.
 type subscription struct {
-	cancel func()
+	agent   *agent
+	subject string
+	queue   string
+	handler MessageHandler
+	cancel  func()
 }
 
 func (s *subscription) Unsubscribe() error {
 	s.cancel()
+	// Remove from tracked subscriptions
+	if s.agent != nil {
+		s.agent.untrackSubscription(s.subject, s.queue)
+	}
 	return nil
+}
+
+// trackSubscription adds a subscription to the tracking list for reconnection recovery.
+func (c *agent) trackSubscription(subject, queue string, handler MessageHandler) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	// Avoid duplicates (can happen during resubscription)
+	for _, sub := range c.subscriptions {
+		if sub.subject == subject && sub.queue == queue {
+			return
+		}
+	}
+
+	c.subscriptions = append(c.subscriptions, subRecord{
+		subject: subject,
+		queue:   queue,
+		handler: handler,
+	})
+}
+
+// untrackSubscription removes a subscription from the tracking list.
+func (c *agent) untrackSubscription(subject, queue string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	for i, sub := range c.subscriptions {
+		if sub.subject == subject && sub.queue == queue {
+			// Remove by swapping with last element and truncating
+			c.subscriptions[i] = c.subscriptions[len(c.subscriptions)-1]
+			c.subscriptions = c.subscriptions[:len(c.subscriptions)-1]
+			return
+		}
+	}
 }

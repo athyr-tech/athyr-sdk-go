@@ -5,6 +5,35 @@ import (
 	"time"
 )
 
+// ConnectionState represents the agent's connection status.
+type ConnectionState int
+
+const (
+	StateDisconnected ConnectionState = iota
+	StateConnecting
+	StateConnected
+	StateReconnecting
+)
+
+func (s ConnectionState) String() string {
+	switch s {
+	case StateDisconnected:
+		return "disconnected"
+	case StateConnecting:
+		return "connecting"
+	case StateConnected:
+		return "connected"
+	case StateReconnecting:
+		return "reconnecting"
+	default:
+		return "unknown"
+	}
+}
+
+// ConnectionCallback is called when connection state changes.
+// The error is non-nil when transitioning to StateDisconnected or StateReconnecting.
+type ConnectionCallback func(state ConnectionState, err error)
+
 // AgentOption configures a Agent.
 type AgentOption func(*agentOptions)
 
@@ -18,6 +47,13 @@ type agentOptions struct {
 	tlsConfig   *tls.Config // Custom TLS config (advanced)
 	insecure    bool        // Explicit opt-in for insecure connections
 
+	// Auto-reconnect
+	autoReconnect bool
+	maxRetries    int           // 0 = infinite retries
+	baseBackoff   time.Duration // Initial backoff duration
+	maxBackoff    time.Duration // Maximum backoff duration
+	onStateChange ConnectionCallback
+
 	// Observability
 	logger Logger
 }
@@ -26,6 +62,8 @@ func defaultOptions() agentOptions {
 	return agentOptions{
 		heartbeatInterval: 30 * time.Second,
 		requestTimeout:    60 * time.Second,
+		baseBackoff:       1 * time.Second,
+		maxBackoff:        30 * time.Second,
 		logger:            nopLogger{},
 	}
 }
@@ -136,5 +174,61 @@ func WithLogger(logger Logger) AgentOption {
 		if logger != nil {
 			o.logger = logger
 		}
+	}
+}
+
+// WithAutoReconnect enables automatic reconnection on connection loss.
+// maxRetries specifies the maximum number of reconnection attempts (0 = infinite).
+// baseBackoff specifies the initial backoff duration between attempts.
+// Backoff increases exponentially with jitter, capped at maxBackoff (default: 30s).
+//
+// Example:
+//
+//	agent, _ := athyr.NewAgent("athyr.example.com:9090",
+//	    athyr.WithAutoReconnect(10, time.Second), // 10 retries, 1s base backoff
+//	)
+func WithAutoReconnect(maxRetries int, baseBackoff time.Duration) AgentOption {
+	return func(o *agentOptions) {
+		o.autoReconnect = true
+		o.maxRetries = maxRetries
+		if baseBackoff > 0 {
+			o.baseBackoff = baseBackoff
+		}
+	}
+}
+
+// WithMaxBackoff sets the maximum backoff duration for reconnection attempts.
+// Default is 30 seconds.
+//
+// Example:
+//
+//	agent, _ := athyr.NewAgent("athyr.example.com:9090",
+//	    athyr.WithAutoReconnect(0, time.Second),
+//	    athyr.WithMaxBackoff(time.Minute),
+//	)
+func WithMaxBackoff(d time.Duration) AgentOption {
+	return func(o *agentOptions) {
+		if d > 0 {
+			o.maxBackoff = d
+		}
+	}
+}
+
+// WithConnectionCallback sets a callback invoked when connection state changes.
+// The callback receives the new state and any associated error.
+// Use this to monitor connection health and react to disconnections.
+//
+// Example:
+//
+//	agent, _ := athyr.NewAgent("athyr.example.com:9090",
+//	    athyr.WithConnectionCallback(func(state athyr.ConnectionState, err error) {
+//	        if state == athyr.StateReconnecting {
+//	            log.Println("Connection lost, reconnecting...")
+//	        }
+//	    }),
+//	)
+func WithConnectionCallback(cb ConnectionCallback) AgentOption {
+	return func(o *agentOptions) {
+		o.onStateChange = cb
 	}
 }
