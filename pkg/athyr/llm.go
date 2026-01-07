@@ -19,7 +19,7 @@ func (c *agent) Complete(ctx context.Context, req CompletionRequest) (*Completio
 
 	resp, err := c.athyr.Complete(ctx, protoReq)
 	if err != nil {
-		return nil, err
+		return nil, wrapError("Complete", err)
 	}
 
 	return &CompletionResponse{
@@ -46,7 +46,7 @@ func (c *agent) CompleteStream(ctx context.Context, req CompletionRequest, handl
 
 	stream, err := c.athyr.CompleteStream(ctx, protoReq)
 	if err != nil {
-		return err
+		return wrapError("CompleteStream", err)
 	}
 
 	// Track last error chunk for StreamError context
@@ -68,7 +68,7 @@ func (c *agent) CompleteStream(ctx context.Context, req CompletionRequest, handl
 					PartialResponse:    lastErrorChunk.PartialResponse,
 				}
 			}
-			return err
+			return wrapError("CompleteStream", err)
 		}
 
 		// Check for error chunk (sent before stream closes on failure)
@@ -107,7 +107,7 @@ func (c *agent) Models(ctx context.Context) ([]Model, error) {
 
 	resp, err := c.athyr.ListModels(ctx, &athyr.ListModelsRequest{})
 	if err != nil {
-		return nil, err
+		return nil, wrapError("Models", err)
 	}
 
 	models := make([]Model, len(resp.Models))

@@ -17,7 +17,7 @@ func (c *agent) Publish(ctx context.Context, subject string, data []byte) error 
 		Subject: subject,
 		Data:    data,
 	})
-	return err
+	return wrapError("Publish", err)
 }
 
 // Subscribe creates a subscription to the given subject.
@@ -41,7 +41,7 @@ func (c *agent) subscribe(ctx context.Context, subject, queue string, handler Me
 		QueueGroup: queue,
 	})
 	if err != nil {
-		return nil, err
+		return nil, wrapError("Subscribe", err)
 	}
 
 	sub := &subscription{
@@ -85,7 +85,7 @@ func (c *agent) Request(ctx context.Context, subject string, data []byte) ([]byt
 		TimeoutMs: c.opts.requestTimeout.Milliseconds(),
 	})
 	if err != nil {
-		return nil, err
+		return nil, wrapError("Request", err)
 	}
 
 	return resp.Data, nil

@@ -22,7 +22,7 @@ func (c *agent) CreateSession(ctx context.Context, profile SessionProfile, syste
 		SystemPrompt: systemPrompt,
 	})
 	if err != nil {
-		return nil, err
+		return nil, wrapError("CreateSession", err)
 	}
 
 	return protoToSession(resp), nil
@@ -39,7 +39,7 @@ func (c *agent) GetSession(ctx context.Context, sessionID string) (*Session, err
 		SessionId: sessionID,
 	})
 	if err != nil {
-		return nil, err
+		return nil, wrapError("GetSession", err)
 	}
 
 	return protoToSession(resp), nil
@@ -55,7 +55,7 @@ func (c *agent) DeleteSession(ctx context.Context, sessionID string) error {
 		AgentId:   c.agentID,
 		SessionId: sessionID,
 	})
-	return err
+	return wrapError("DeleteSession", err)
 }
 
 // AddHint adds a persistent hint to a session.
@@ -69,7 +69,7 @@ func (c *agent) AddHint(ctx context.Context, sessionID, hint string) error {
 		SessionId: sessionID,
 		Hint:      hint,
 	})
-	return err
+	return wrapError("AddHint", err)
 }
 
 // protoToSession converts a proto Session to SDK Session.

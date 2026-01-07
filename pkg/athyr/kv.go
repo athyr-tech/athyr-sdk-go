@@ -39,7 +39,7 @@ func (k *kvBucket) Get(ctx context.Context, key string) (*KVEntry, error) {
 		Key:     key,
 	})
 	if err != nil {
-		return nil, err
+		return nil, wrapError("KV.Get", err)
 	}
 
 	return &KVEntry{
@@ -60,7 +60,7 @@ func (k *kvBucket) Put(ctx context.Context, key string, value []byte) (uint64, e
 		Value:   value,
 	})
 	if err != nil {
-		return 0, err
+		return 0, wrapError("KV.Put", err)
 	}
 
 	return resp.Revision, nil
@@ -76,7 +76,7 @@ func (k *kvBucket) Delete(ctx context.Context, key string) error {
 		Bucket:  k.bucket,
 		Key:     key,
 	})
-	return err
+	return wrapError("KV.Delete", err)
 }
 
 func (k *kvBucket) List(ctx context.Context, prefix string) ([]string, error) {
@@ -90,7 +90,7 @@ func (k *kvBucket) List(ctx context.Context, prefix string) ([]string, error) {
 		Prefix:  prefix,
 	})
 	if err != nil {
-		return nil, err
+		return nil, wrapError("KV.List", err)
 	}
 
 	return resp.Keys, nil
