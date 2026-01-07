@@ -96,6 +96,10 @@ type PipelineData struct {
 }
 ```
 
+> **Note:** A shared type works well when you control all agents in the pipeline.
+> For pipelines with independent or third-party agents, the SDK supports
+> `WithTransform()` to adapt between different input/output types at each stage.
+
 ## Running Locally (without Docker)
 
 Start each component in separate terminals:
