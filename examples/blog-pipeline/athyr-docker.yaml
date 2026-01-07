@@ -1,0 +1,14 @@
+# Athyr config for Docker Compose
+server:
+  addr: 0.0.0.0
+  grpc_port: 9090
+  http_port: 8080
+
+storage:
+  data_dir: /data
+
+llm:
+  backends:
+    - name: ollama
+      type: ollama
+      url: http://ollama:11434

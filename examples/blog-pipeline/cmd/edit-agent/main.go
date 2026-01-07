@@ -1,11 +1,4 @@
-// Edit Agent - Improves blog posts for clarity and engagement.
-//
-// This is the third stage in the blog pipeline. It receives the draft
-// and produces a polished, edited version.
-//
-// Usage:
-//
-//	edit-agent --athyr=localhost:9090 --model=qwen3:4b
+// Edit Agent - Third stage: improves blog posts for clarity and engagement.
 package main
 
 import (
@@ -13,92 +6,71 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"os/signal"
-	"syscall"
 	"time"
 
+	"github.com/athyr-tech/athyr-sdk-go/examples/blog-pipeline/internal/run"
 	"github.com/athyr-tech/athyr-sdk-go/examples/blog-pipeline/internal/types"
 	"github.com/athyr-tech/athyr-sdk-go/pkg/athyr"
 )
 
 var (
-	athyrAddr = flag.String("athyr", types.DefaultAthyrAddr(), "Athyr server address")
-	model     = flag.String("model", types.DefaultModel(), "LLM model to use")
+	athyrAddr = flag.String("athyr", "localhost:9090", "Athyr server address")
+	model     = flag.String("model", "qwen3:4b", "LLM model")
 )
+
+const agentName = "edit-agent"
 
 func main() {
 	flag.Parse()
 
-	fmt.Println("🔍 Edit Agent")
-	fmt.Printf("   Athyr: %s\n", *athyrAddr)
-	fmt.Printf("   Model: %s\n", *model)
-	fmt.Printf("   Subject: %s\n", types.SubjectEdit)
-	fmt.Println()
+	err := run.UntilSignal(func(ctx context.Context) error {
+		server := athyr.NewServer(*athyrAddr,
+			athyr.WithAgentName(agentName),
+			athyr.WithAgentDescription("Improves blog posts for clarity"),
+			athyr.WithVersion("1.0.0"),
+		)
+		athyr.Handle(server, types.SubjectEdit, handler(*model))
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+		run.Log(agentName, "listening on %s", types.SubjectEdit)
+		return server.Run(ctx)
+	})
 
-	sigCh := make(chan os.Signal, 1)
-	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
-	go func() {
-		<-sigCh
-		fmt.Println("\nShutting down...")
-		cancel()
-	}()
-
-	server := athyr.NewServer(*athyrAddr,
-		athyr.WithAgentName("edit-agent"),
-		athyr.WithAgentDescription("Improves blog posts for clarity and engagement"),
-		athyr.WithVersion("1.0.0"),
-	)
-	athyr.Handle(server, types.SubjectEdit, handler(*model))
-
-	fmt.Println("✅ Starting service...")
-	if err := server.Run(ctx); err != nil && err != context.Canceled {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+	if err != nil && err != context.Canceled {
+		fmt.Fprintf(os.Stderr, "error: %v\n", err)
 		os.Exit(1)
 	}
 }
 
 func handler(model string) athyr.Handler[types.PipelineData, types.PipelineData] {
 	return func(ctx athyr.Context, data types.PipelineData) (types.PipelineData, error) {
-		fmt.Printf("🔍 Editing draft for: %q\n", data.Topic)
+		run.Log(agentName, "input: %s", run.Truncate(data.Draft, 200))
 
-		userPrompt := fmt.Sprintf(`Edit and improve this blog post for clarity, flow, and engagement:
-
-%s`, data.Draft)
-
-		startTime := time.Now()
+		start := time.Now()
 		resp, err := ctx.Agent().Complete(ctx, athyr.CompletionRequest{
 			Model: model,
 			Messages: []athyr.Message{
 				{Role: "system", Content: systemPrompt},
-				{Role: "user", Content: userPrompt},
+				{Role: "user", Content: fmt.Sprintf("Edit and improve this blog post:\n\n%s", data.Draft)},
 			},
 		})
-		duration := time.Since(startTime)
-
 		if err != nil {
-			fmt.Printf("   ✗ Error: %v\n", err)
 			return data, athyr.Unavailable("edit failed: %v", err)
 		}
 
-		fmt.Printf("   ✓ Done (%d tokens, %v)\n", resp.Usage.TotalTokens, duration.Round(time.Millisecond))
-
 		data.Edited = resp.Content
 		data.TotalTokens += resp.Usage.TotalTokens
+
+		run.Log(agentName, "output: %s", run.Truncate(data.Edited, 200))
+		run.Log(agentName, "done (%d tokens, %v)", resp.Usage.TotalTokens, time.Since(start).Round(time.Millisecond))
 
 		return data, nil
 	}
 }
 
-const systemPrompt = `You are an expert editor. Improve blog posts for clarity and engagement.
+const systemPrompt = `You are an editor. Improve blog posts for clarity and engagement.
+- Fix grammar and spelling
+- Improve sentence flow
+- Enhance readability
+- Strengthen intro and conclusion
 
-Focus on:
-- Fixing grammar and spelling
-- Improving sentence flow
-- Enhancing readability
-- Strengthening the introduction and conclusion
-- Ensuring consistent tone
-
-Return the improved version in markdown format. Do not add commentary, just return the edited post.`
+Return only the edited post in markdown format.`

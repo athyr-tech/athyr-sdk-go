@@ -1,0 +1,124 @@
+# Blog Pipeline - Docker Compose
+#
+# Usage:
+#   docker compose up -d                        # Start all services
+#   docker compose run --rm model-pull          # Pull model (first time)
+#   docker compose attach orchestrator          # Interact with pipeline
+
+services:
+  ollama:
+    image: ollama/ollama
+    volumes:
+      - ollama-data:/root/.ollama
+    ports:
+      - "11434:11434"
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  athyr:
+    image: athyr:test
+    command: ["serve", "--config", "/etc/athyr/athyr.yaml"]
+    ports:
+      - "9090:9090"
+      - "8080:8080"
+    volumes:
+      - ./athyr-docker.yaml:/etc/athyr/athyr.yaml:ro
+      - athyr-data:/data
+    depends_on:
+      ollama:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "9090"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+
+  outline-agent:
+    build:
+      context: ../..
+      dockerfile: examples/blog-pipeline/Dockerfile
+      args:
+        AGENT: outline-agent
+    command: ["--athyr=athyr:9090", "--model=${MODEL:-smollm2:135m}"]
+    depends_on:
+      athyr:
+        condition: service_healthy
+    restart: unless-stopped
+
+  draft-agent:
+    build:
+      context: ../..
+      dockerfile: examples/blog-pipeline/Dockerfile
+      args:
+        AGENT: draft-agent
+    command: ["--athyr=athyr:9090", "--model=${MODEL:-smollm2:135m}"]
+    depends_on:
+      athyr:
+        condition: service_healthy
+    restart: unless-stopped
+
+  edit-agent:
+    build:
+      context: ../..
+      dockerfile: examples/blog-pipeline/Dockerfile
+      args:
+        AGENT: edit-agent
+    command: ["--athyr=athyr:9090", "--model=${MODEL:-smollm2:135m}"]
+    depends_on:
+      athyr:
+        condition: service_healthy
+    restart: unless-stopped
+
+  seo-agent:
+    build:
+      context: ../..
+      dockerfile: examples/blog-pipeline/Dockerfile
+      args:
+        AGENT: seo-agent
+    command: ["--athyr=athyr:9090", "--model=${MODEL:-smollm2:135m}"]
+    depends_on:
+      athyr:
+        condition: service_healthy
+    restart: unless-stopped
+
+  model-pull:
+    image: ollama/ollama
+    volumes:
+      - ollama-data:/root/.ollama
+    environment:
+      OLLAMA_HOST: ollama:11434
+    entrypoint: ["ollama", "pull", "${MODEL:-smollm2:135m}"]
+    depends_on:
+      ollama:
+        condition: service_healthy
+    profiles: ["cli"]
+
+  orchestrator:
+    build:
+      context: ../..
+      dockerfile: examples/blog-pipeline/Dockerfile
+      args:
+        AGENT: orchestrator
+    command: ["--athyr=athyr:9090"]
+    stdin_open: true
+    tty: true
+    depends_on:
+      athyr:
+        condition: service_healthy
+      outline-agent:
+        condition: service_started
+      draft-agent:
+        condition: service_started
+      edit-agent:
+        condition: service_started
+      seo-agent:
+        condition: service_started
+
+volumes:
+  athyr-data:
+  ollama-data:

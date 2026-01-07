@@ -42,10 +42,13 @@ temp/
 *.tmp
 *.log
 
+# Example outputs
+examples/blog-pipeline/output/
+
 # bv (beads viewer) local config and caches
 .bv/
 
 # Claude Code local settings
 .claude/
-/localDocs/
+/localFiles/
 AGENTS.md

@@ -1,155 +1,84 @@
-// Orchestrator - Coordinates the blog pipeline stages.
+// Orchestrator CLI - Interactive interface for the blog pipeline.
 //
-// This is the pipeline controller that sends requests to each agent
-// in sequence: Outline → Draft → Edit → SEO.
-//
-// The orchestrator doesn't process content itself - it coordinates
-// the distributed agents via Athyr messaging.
-//
-// Usage:
-//
-//	orchestrator --athyr=localhost:9090 --topic="Your Blog Topic" --output=blog.md
+// This is a thin CLI wrapper around the pipeline package.
+// See internal/pipeline for the core orchestration logic.
 package main
 
 import (
+	"bufio"
 	"context"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
-	"os/signal"
-	"syscall"
+	"strings"
 	"time"
 
-	"github.com/athyr-tech/athyr-sdk-go/examples/blog-pipeline/internal/types"
-	"github.com/athyr-tech/athyr-sdk-go/pkg/athyr"
-	"github.com/athyr-tech/athyr-sdk-go/pkg/orchestration"
+	"github.com/athyr-tech/athyr-sdk-go/examples/blog-pipeline/internal/pipeline"
+	"github.com/athyr-tech/athyr-sdk-go/examples/blog-pipeline/internal/run"
 )
 
-var (
-	athyrAddr = flag.String("athyr", types.DefaultAthyrAddr(), "Athyr server address")
-	topic     = flag.String("topic", "", "Topic for the blog post (required)")
-	output    = flag.String("output", types.DefaultOutputPath(), "Output file")
-)
+var athyrAddr = flag.String("athyr", "localhost:9090", "Athyr server address")
 
 func main() {
 	flag.Parse()
 
-	if *topic == "" {
-		fmt.Fprintln(os.Stderr, "Error: --topic is required")
-		fmt.Fprintln(os.Stderr, "Usage: orchestrator --topic \"Your Blog Topic\"")
-		os.Exit(1)
-	}
+	err := run.UntilSignal(func(ctx context.Context) error {
+		return runCLI(ctx, *athyrAddr)
+	})
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	sigCh := make(chan os.Signal, 1)
-	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
-	go func() {
-		<-sigCh
-		fmt.Println("\n\nInterrupted, shutting down...")
-		cancel()
-	}()
-
-	if err := run(ctx); err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+	if err != nil && err != context.Canceled {
+		fmt.Fprintf(os.Stderr, "error: %v\n", err)
 		os.Exit(1)
 	}
 }
 
-func run(ctx context.Context) error {
-	printHeader()
+func runCLI(ctx context.Context, athyrAddr string) error {
+	scanner := bufio.NewScanner(os.Stdin)
 
-	// Connect to Athyr
-	agent, err := athyr.NewAgent(*athyrAddr,
-		athyr.WithAgentCard(athyr.AgentCard{
-			Name:         "blog-orchestrator",
-			Description:  "Coordinates the blog post creation pipeline",
-			Version:      "1.0.0",
-			Capabilities: []string{"orchestration", "pipeline"},
-		}),
-	)
-	if err != nil {
-		return fmt.Errorf("failed to create agent: %w", err)
-	}
-
-	fmt.Printf("⚡ Connecting to Athyr at %s... ", *athyrAddr)
-	if err := agent.Connect(ctx); err != nil {
-		fmt.Println("✗")
-		return fmt.Errorf("failed to connect: %w", err)
-	}
-	fmt.Printf("✓ (Agent: %s)\n", agent.AgentID())
-	defer agent.Close()
-
-	fmt.Println()
-	fmt.Printf("📝 Topic: %s\n", *topic)
-	fmt.Println()
-	fmt.Println("─────────────────────────────────────────")
-
-	// Build the pipeline: Outline → Draft → Edit → SEO
-	pipeline := orchestration.NewPipeline("blog-creation").
-		Step("outline", types.SubjectOutline).
-		Step("draft", types.SubjectDraft).
-		Step("edit", types.SubjectEdit).
-		Step("seo", types.SubjectSEO)
-
-	// Prepare initial input
-	input := types.PipelineData{Topic: *topic}
-	inputBytes, _ := json.Marshal(input)
-
-	// Execute with trace for detailed progress
-	startTime := time.Now()
-	trace, err := pipeline.ExecuteWithTrace(ctx, agent, inputBytes)
-	totalDuration := time.Since(startTime)
-
-	if err != nil {
-		return fmt.Errorf("pipeline failed: %w", err)
-	}
-
-	// Extract and save final content
-	var finalData types.PipelineData
-	if err := json.Unmarshal(trace.Output(), &finalData); err != nil {
-		return fmt.Errorf("failed to parse final output: %w", err)
-	}
-
-	printSummary(trace, totalDuration, finalData)
-
-	// Save output
-	if err := os.WriteFile(*output, []byte(finalData.Final), 0644); err != nil {
-		return fmt.Errorf("failed to write output: %w", err)
-	}
-	fmt.Printf("   Output saved: %s\n", *output)
-
-	return nil
-}
-
-func printHeader() {
-	fmt.Println()
-	fmt.Println("╔══════════════════════════════════════════════════╗")
-	fmt.Println("║      Blog Pipeline Orchestrator                  ║")
-	fmt.Println("║                                                  ║")
-	fmt.Println("║   📋 Outline → ✍️ Draft → 🔍 Edit → 🔎 SEO       ║")
-	fmt.Println("╚══════════════════════════════════════════════════╝")
-	fmt.Println()
-}
-
-func printSummary(trace *orchestration.PipelineTrace, duration time.Duration, data types.PipelineData) {
-	fmt.Println()
-	fmt.Println("─────────────────────────────────────────")
-	fmt.Println()
-	fmt.Println("✅ Pipeline Complete!")
+	fmt.Println("Blog Pipeline")
+	fmt.Println("Type a topic to generate a blog post, or 'quit' to exit.")
 	fmt.Println()
 
-	for _, step := range trace.Steps {
-		status := "✓"
-		if step.Error != nil {
-			status = "✗"
+	for {
+		fmt.Print("topic> ")
+		if !scanner.Scan() {
+			break
 		}
-		fmt.Printf("   %s %-10s %v\n", status, step.Name, step.Duration.Round(time.Millisecond))
+
+		topic := strings.TrimSpace(scanner.Text())
+		if topic == "" {
+			continue
+		}
+		if topic == "quit" || topic == "exit" {
+			fmt.Println("bye")
+			break
+		}
+
+		result, err := pipeline.Run(ctx, athyrAddr, topic)
+		if err != nil {
+			fmt.Printf("error: %v\n\n", err)
+			continue
+		}
+
+		printResult(result)
 	}
 
+	return scanner.Err()
+}
+
+func printResult(r *pipeline.Result) {
 	fmt.Println()
-	fmt.Printf("   Total time:   %v\n", duration.Round(time.Millisecond))
-	fmt.Printf("   Total tokens: ~%d\n", data.TotalTokens)
+
+	// Print each step with truncated output
+	for i, step := range r.Steps {
+		fmt.Printf("[%d/%d] %s (%v)\n", i+1, len(r.Steps), step.Name, step.Duration.Round(time.Millisecond))
+		fmt.Println("---")
+		fmt.Println(run.Truncate(step.Output, 500))
+		fmt.Println("---")
+		fmt.Println()
+	}
+
+	// Summary
+	fmt.Printf("complete: %v, %d tokens\n", r.Duration.Round(time.Millisecond), r.TotalTokens)
+	fmt.Println()
 }
