@@ -14,7 +14,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/athyr-tech/athyr-sdk-go/examples/blog-pipeline/internal/types"
+	"github.com/athyr-tech/athyr-sdk-go/examples/pipeline/internal/types"
 	"github.com/athyr-tech/athyr-sdk-go/pkg/athyr"
 	"github.com/athyr-tech/athyr-sdk-go/pkg/orchestration"
 )

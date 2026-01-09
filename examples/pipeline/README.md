@@ -1,6 +1,7 @@
-# Blog Pipeline Example
+# Example: Pipeline Pattern
 
-A multi-stage pipeline that generates blog posts using distributed agents.
+Demonstrates multi-stage sequential processing with distributed agents.
+Use case: Blog post generation through outline, draft, edit, and SEO stages.
 
 ```
 Topic → [Outline] → [Draft] → [Edit] → [SEO] → Final Post
@@ -34,7 +35,7 @@ topic> why cats are cool
 ## Project Structure
 
 ```
-blog-pipeline/
+pipeline/
 ├── internal/
 │   ├── pipeline/       # Core pipeline orchestration logic
 │   ├── types/          # Shared data structures

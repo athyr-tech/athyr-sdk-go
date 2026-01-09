@@ -1,8 +1,8 @@
-// Example: Resilient Agent
+// Example: Resilience
 //
-// Demonstrates graceful handling of streaming errors using StreamError.
+// Demonstrates resilient streaming with automatic error recovery.
 // Shows how agents can:
-// - Detect partial responses
+// - Detect partial responses via StreamError
 // - Retry with the same or different model
 // - Fall back to blocking mode
 // - Provide good UX during failures
@@ -12,8 +12,8 @@
 //	# Start Athyr server first
 //	go run ./cmd/athyr serve
 //
-//	# Run the resilient agent
-//	go run ./examples/resilient-agent
+//	# Run the agent
+//	go run ./examples/resilience
 package main
 
 import (

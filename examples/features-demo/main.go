@@ -1,6 +1,6 @@
-// Example: Chat Agent
+// Example: Features Demo
 //
-// A conversational assistant that demonstrates Athyr SDK features:
+// A conversational assistant showcasing Athyr SDK features:
 // - Agent registration and lifecycle
 // - Memory sessions for conversation context
 // - LLM completions (blocking and streaming)
@@ -13,7 +13,7 @@
 //	go run ./cmd/athyr serve
 //
 //	# In another terminal, run the agent
-//	go run ./examples/chat-agent
+//	go run ./examples/features-demo
 package main
 
 import (

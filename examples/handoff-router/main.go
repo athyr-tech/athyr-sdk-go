@@ -1,7 +1,8 @@
-// Example: Intent Classifier (HandoffRouter Pattern)
+// Example: HandoffRouter Pattern
 //
 // Demonstrates dynamic request routing based on classification.
-// A router agent classifies user intent and hands off to specialists.
+// A triage agent analyzes input and routes to the appropriate specialist.
+// Use case: Intent classification routing to weather, calculator, or joke agents.
 //
 // Usage:
 //

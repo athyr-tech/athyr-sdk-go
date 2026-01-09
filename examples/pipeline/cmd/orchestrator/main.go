@@ -13,8 +13,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/athyr-tech/athyr-sdk-go/examples/blog-pipeline/internal/pipeline"
-	"github.com/athyr-tech/athyr-sdk-go/examples/blog-pipeline/internal/run"
+	"github.com/athyr-tech/athyr-sdk-go/examples/pipeline/internal/pipeline"
+	"github.com/athyr-tech/athyr-sdk-go/examples/pipeline/internal/run"
 )
 
 var athyrAddr = flag.String("athyr", "localhost:9090", "Athyr server address")

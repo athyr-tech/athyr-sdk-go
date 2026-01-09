@@ -1,7 +1,8 @@
-// Example: Content Moderator (FanOut Pattern)
+// Example: FanOut Pattern
 //
 // Demonstrates parallel agent execution with result aggregation.
-// Three agents analyze content simultaneously, then aggregate scores.
+// Multiple agents process the same input simultaneously, then combine results.
+// Use case: Content moderation with toxicity, spam, and relevance checks.
 //
 // Usage:
 //

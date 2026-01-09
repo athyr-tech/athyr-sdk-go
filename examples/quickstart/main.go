@@ -1,17 +1,17 @@
-// Example: Echo Agent
+// Example: Quickstart
 //
-// A minimal agent that demonstrates pub/sub messaging:
-// - Subscribes to a subject
-// - Echoes messages back with a prefix
-// - Uses request/reply pattern
+// A minimal agent that demonstrates basic Athyr SDK usage:
+// - Agent registration and connection
+// - Pub/sub subscription
+// - Request/reply messaging
 //
 // Usage:
 //
 //	# Start Athyr server first
 //	go run ./cmd/athyr serve
 //
-//	# Run the echo agent
-//	go run ./examples/echo-agent
+//	# Run the agent
+//	go run ./examples/quickstart
 //
 //	# Test with another client or use the HTTP API:
 //	curl -X POST http://localhost:8080/v1/request \

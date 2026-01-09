@@ -1,7 +1,8 @@
-// Example: Debate Club (GroupChat Pattern)
+// Example: GroupChat Pattern
 //
-// Demonstrates multi-agent collaborative discussion.
-// Agents take turns debating a topic with structured turn management.
+// Demonstrates multi-agent collaborative discussion with turn management.
+// Participants take turns contributing to a shared conversation.
+// Use case: Debate simulation with pro, con, and moderator agents.
 //
 // Usage:
 //
