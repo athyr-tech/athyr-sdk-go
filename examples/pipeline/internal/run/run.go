@@ -4,23 +4,14 @@ package run
 import (
 	"context"
 	"fmt"
-	"os"
 	"os/signal"
 	"syscall"
 )
 
 // UntilSignal runs fn until SIGINT/SIGTERM is received.
 func UntilSignal(fn func(ctx context.Context) error) error {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	sigCh := make(chan os.Signal, 1)
-	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
-	go func() {
-		<-sigCh
-		fmt.Println("shutting down...")
-		cancel()
-	}()
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
 
 	return fn(ctx)
 }

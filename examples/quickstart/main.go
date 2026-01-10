@@ -34,17 +34,8 @@ import (
 const athyrAddr = "localhost:9090"
 
 func main() {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	// Handle graceful shutdown
-	sigCh := make(chan os.Signal, 1)
-	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
-	go func() {
-		<-sigCh
-		fmt.Println("\nShutting down...")
-		cancel()
-	}()
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
 
 	if err := run(ctx); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)

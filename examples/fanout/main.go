@@ -90,15 +90,9 @@ func runOrchestrator() error {
 	fmt.Println("===================================")
 
 	ctx := context.Background()
-	agent, err := athyr.NewAgent(addr,
+	agent := athyr.MustConnect(addr,
 		athyr.WithAgentCard(athyr.AgentCard{Name: "content-moderator"}),
 	)
-	if err != nil {
-		return err
-	}
-	if err := agent.Connect(ctx); err != nil {
-		return err
-	}
 	defer agent.Close()
 
 	// Build FanOut - this is what we're demonstrating
