@@ -15,6 +15,9 @@
 *.out
 vendor/
 
+# Proto files (source lives in server repo, SDK only needs generated .pb.go)
+*.proto
+
 # Build
 bin/
 dist/
