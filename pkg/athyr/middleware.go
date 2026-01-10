@@ -119,10 +119,12 @@ func RateLimit(maxConcurrent int) Middleware {
 	}
 }
 
-// Metrics returns middleware that tracks request metrics.
-// The callback receives timing and error info for each request.
+// MetricsCallback receives timing and error info for each request.
+// Used with the Metrics middleware to collect observability data.
 type MetricsCallback func(subject string, duration time.Duration, err error)
 
+// Metrics returns middleware that tracks request metrics.
+// The callback is invoked after each request with the subject, duration, and any error.
 func Metrics(callback MetricsCallback) Middleware {
 	return func(next RawHandler) RawHandler {
 		return func(ctx Context, data []byte) ([]byte, error) {
