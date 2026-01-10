@@ -1,5 +1,9 @@
 # Athyr SDK for Go
 
+[![Go Reference](https://pkg.go.dev/badge/github.com/athyr-tech/athyr-sdk-go.svg)](https://pkg.go.dev/github.com/athyr-tech/athyr-sdk-go)
+[![Go Report Card](https://goreportcard.com/badge/github.com/athyr-tech/athyr-sdk-go)](https://goreportcard.com/report/github.com/athyr-tech/athyr-sdk-go)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+
 Go SDK for building agents on the [Athyr](https://github.com/athyr-tech/athyr) platform.
 
 ## Installation
