@@ -31,7 +31,7 @@ Thumbs.db
 # Local development
 .env
 .env.local
-*.local
+.local/
 
 # Coverage
 coverage.out
@@ -51,5 +51,4 @@ examples/blog-pipeline/output/
 
 # Claude Code local settings
 .claude/
-/localFiles/
 AGENTS.md
