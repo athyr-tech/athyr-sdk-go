@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation
+    url: https://pkg.go.dev/github.com/athyr-tech/athyr-sdk-go
+    about: Check the API documentation
+  - name: Athyr Server
+    url: https://github.com/athyr-tech/athyr
+    about: Issues related to the Athyr server

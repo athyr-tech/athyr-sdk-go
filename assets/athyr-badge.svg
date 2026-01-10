@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 28" width="100" height="28">
+  <rect width="100" height="28" rx="4" fill="#1e1e1e"/>
+  
+  <!-- Mini logo using nested SVG -->
+  <svg x="4" y="2" width="24" height="24" viewBox="0 0 800 700">
+    <g transform="translate(10 680) rotate(0 387 -335)">
+      <path d="M0 0 L387 -670 L774 0 L343 -4 L344 -145 L521 -147 L393 -368 L182 0 Z" fill="#ffffff"/>
+    </g>
+    <rect x="320" y="534" width="70" height="142" fill="#6c757d"/>
+    <rect x="390" y="534" width="10" height="142" fill="#adb5bd"/>
+    <rect x="350" y="534" width="70" height="142" fill="#868e96"/>
+    <rect x="420" y="534" width="10" height="142" fill="#ced4da"/>
+  </svg>
+  
+  <text x="34" y="18" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#ffffff">ATHYR</text>
+</svg>

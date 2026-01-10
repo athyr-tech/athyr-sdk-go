@@ -1,16 +1,49 @@
-# Athyr SDK for Go
+<p align="center">
+  <img src="assets/athyr-logo.svg" alt="Athyr" width="120">
+</p>
 
-[![Go Reference](https://pkg.go.dev/badge/github.com/athyr-tech/athyr-sdk-go.svg)](https://pkg.go.dev/github.com/athyr-tech/athyr-sdk-go)
-[![Go Report Card](https://goreportcard.com/badge/github.com/athyr-tech/athyr-sdk-go)](https://goreportcard.com/report/github.com/athyr-tech/athyr-sdk-go)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+<h1 align="center">Athyr SDK for Go</h1>
 
-Go SDK for building agents on the [Athyr](https://github.com/athyr-tech/athyr) platform.
+<p align="center">
+  <strong>Build distributed AI agents with production-grade infrastructure</strong>
+</p>
+
+<p align="center">
+  <a href="https://pkg.go.dev/github.com/athyr-tech/athyr-sdk-go"><img src="https://pkg.go.dev/badge/github.com/athyr-tech/athyr-sdk-go.svg" alt="Go Reference"></a>
+  <a href="https://goreportcard.com/report/github.com/athyr-tech/athyr-sdk-go"><img src="https://goreportcard.com/badge/github.com/athyr-tech/athyr-sdk-go" alt="Go Report Card"></a>
+  <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
+  <img src="assets/athyr-badge.svg" alt="Athyr">
+</p>
+
+<p align="center">
+  <a href="#installation">Installation</a> •
+  <a href="#quick-start">Quick Start</a> •
+  <a href="#features">Features</a> •
+  <a href="#examples">Examples</a> •
+  <a href="docs/">Documentation</a>
+</p>
+
+---
+
+## What is Athyr?
+
+[Athyr](https://github.com/athyr-tech/athyr) is a runtime for distributed AI agents. Unlike frameworks where agents are functions in a single process, Athyr treats agents as **independent services** that communicate through a central orchestrator.
+
+This SDK provides the Go client for building agents that connect to the Athyr platform.
+
+**Why Athyr?**
+- **Platform-managed services** — LLM access, memory, storage handled by Athyr
+- **Language agnostic** — Agents are services, write in any language
+- **Independent scaling** — Scale each agent separately
+- **Fault isolation** — One agent failure doesn't crash others
 
 ## Installation
 
 ```bash
 go get github.com/athyr-tech/athyr-sdk-go
 ```
+
+**Requirements:** Go 1.21+ and a running [Athyr server](https://github.com/athyr-tech/athyr)
 
 ## Quick Start
 
@@ -19,25 +52,19 @@ package main
 
 import (
     "context"
-    github.com/athyr-tech/athyr-sdk-go/pkg/athyr
+    "github.com/athyr-tech/athyr-sdk-go/pkg/athyr"
 )
 
 func main() {
-    // Create and connect agent
-    agent, _ := athyr.NewAgent("localhost:9090",
+    agent := athyr.MustConnect("localhost:9090",
         athyr.WithAgentCard(athyr.AgentCard{
-            Name:         "my-agent",
-            Description:  "My first Athyr agent",
-            Capabilities: []string{"chat"},
+            Name:        "my-agent",
+            Description: "My first Athyr agent",
         }),
     )
-
-    ctx := context.Background()
-    agent.Connect(ctx)
     defer agent.Close()
 
-    // LLM completion
-    resp, _ := agent.Complete(ctx, athyr.CompletionRequest{
+    resp, _ := agent.Complete(context.Background(), athyr.CompletionRequest{
         Model:    "llama3",
         Messages: []athyr.Message{{Role: "user", Content: "Hello!"}},
     })
@@ -49,16 +76,16 @@ func main() {
 
 ### Core Agent
 
-- **Connect/Disconnect** - Lifecycle management with automatic reconnection
-- **Pub/Sub Messaging** - Subscribe to subjects, publish messages, request/reply
-- **LLM Completions** - Blocking and streaming completions via Athyr backends
-- **Memory Sessions** - Conversation context with automatic summarization
-- **KV Storage** - Key-value buckets for agent state
-- **Typed Handlers** - Generic `Handler[Req, Resp]` with automatic JSON marshaling
+- **Connect/Disconnect** — Lifecycle management with automatic reconnection
+- **Pub/Sub Messaging** — Subscribe to subjects, publish messages, request/reply
+- **LLM Completions** — Blocking and streaming completions via Athyr backends
+- **Memory Sessions** — Conversation context with automatic summarization
+- **KV Storage** — Key-value buckets for agent state
+- **Tool Calling** — LLM function calling support
 
 ### Orchestration Patterns
 
-Located in `pkg/orchestration/` package:
+Located in `pkg/orchestration/`:
 
 | Pattern | Description |
 |---------|-------------|
@@ -69,14 +96,13 @@ Located in `pkg/orchestration/` package:
 
 ### Middleware
 
-- `Logger` - Request/response logging
-- `Recover` - Panic recovery
-- `Timeout` - Request timeouts
-- `Retry` - Automatic retries with backoff
-- `RateLimit` - Concurrency limiting
-- `Metrics` - Duration/error callbacks
-- `Validate` - Input validation
-- `Chain` - Compose multiple middleware
+- `Logger` — Request/response logging
+- `Recover` — Panic recovery
+- `Timeout` — Request timeouts
+- `Retry` — Automatic retries with backoff
+- `RateLimit` — Concurrency limiting
+- `Metrics` — Duration/error callbacks
+- `Validate` — Input validation
 
 ## Examples
 
@@ -84,10 +110,14 @@ See [`examples/`](examples/) for complete working examples:
 
 | Example | Demonstrates |
 |---------|--------------|
-| [`echo-agent`](examples/echo-agent/) | Basic pub/sub messaging |
-| [`chat-agent`](examples/chat-agent/) | Sessions, KV, streaming |
-| [`resilient-agent`](examples/resilient-agent/) | StreamError handling, retries |
-| [`blog-pipeline`](examples/blog-pipeline/) | Pipeline orchestration pattern |
+| [`quickstart`](examples/quickstart/) | Basic agent setup |
+| [`pipeline`](examples/pipeline/) | Sequential orchestration pattern |
+| [`fanout`](examples/fanout/) | Parallel execution with aggregation |
+| [`group-chat`](examples/group-chat/) | Multi-agent collaboration |
+| [`handoff-router`](examples/handoff-router/) | Dynamic routing via triage |
+| [`resilience`](examples/resilience/) | Error handling and retries |
+| [`tool-calling`](examples/tool-calling/) | LLM function calling |
+| [`features-demo`](examples/features-demo/) | Comprehensive feature demo |
 
 ## Memory Sessions
 
@@ -110,24 +140,21 @@ resp, _ := agent.Complete(ctx, athyr.CompletionRequest{
 agent.AddHint(ctx, session.ID, "User prefers examples with type hints")
 ```
 
-The orchestrator automatically manages:
-- **Context injection** - System prompt, summary, hints, and message history
-- **Rolling window** - Keeps recent messages within token limit
-- **Summarization** - Compresses old messages when threshold reached
+The server automatically manages:
+- **Context injection** — System prompt, summary, hints, and message history
+- **Rolling window** — Keeps recent messages within token limit
+- **Summarization** — Compresses old messages when threshold reached
 
 ## Server Pattern
 
 For building agent services that handle requests:
 
 ```go
-import github.com/athyr-tech/athyr-sdk-go/pkg/athyr
-
 func main() {
     server := athyr.NewServer("localhost:9090",
         athyr.WithAgentName("my-service"),
     )
 
-    // Typed handler with automatic JSON marshaling
     athyr.Handle(server, "echo.request", func(ctx athyr.Context, req EchoRequest) (EchoResponse, error) {
         return EchoResponse{Echo: req.Message}, nil
     })
@@ -136,17 +163,21 @@ func main() {
 }
 ```
 
-## Requirements
+## Documentation
 
-- Go 1.21+
-- Running [Athyr server](https://github.com/athyr-tech/athyr)
-- (Optional) Ollama or other LLM backend
+- [Architecture Overview](docs/ARCHITECTURE.md) — Internal SDK design
+- [Contributing Guide](CONTRIBUTING.md) — How to contribute
+- [Changelog](CHANGELOG.md) — Release history
+- [API Reference](https://pkg.go.dev/github.com/athyr-tech/athyr-sdk-go) — GoDoc
+
+## Contributing
+
+We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ## License
 
-MIT - See [LICENSE](LICENSE) for details.
+MIT — See [LICENSE](LICENSE) for details.
 
 ## Related
 
-- [Athyr Server](https://github.com/athyr-tech/athyr) - The platform this SDK connects to
-- [Athyr SDK Python](https://github.com/athyr-tech/athyr-sdk-python) - Python SDK (coming soon)
+- [Athyr Server](https://github.com/athyr-tech/athyr) — The platform this SDK connects to
