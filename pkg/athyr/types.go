@@ -154,3 +154,12 @@ type KVEntry struct {
 	Value    []byte
 	Revision uint64
 }
+
+// AgentInfo describes a registered agent on the platform.
+type AgentInfo struct {
+	ID          string
+	Card        AgentCard
+	Status      string    // "connected", "disconnected"
+	ConnectedAt time.Time
+	LastSeen    time.Time
+}

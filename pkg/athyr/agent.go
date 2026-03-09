@@ -39,6 +39,10 @@ type Agent interface {
 	DeleteSession(ctx context.Context, sessionID string) error
 	AddHint(ctx context.Context, sessionID, hint string) error
 
+	// Discovery
+	ListAgents(ctx context.Context, skillFilter string) ([]AgentInfo, error)
+	GetAgent(ctx context.Context, agentID string) (*AgentInfo, error)
+
 	// KV
 	KV(bucket string) KVBucket
 }

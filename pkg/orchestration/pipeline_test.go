@@ -89,6 +89,12 @@ func (m *mockAgent) GetSession(ctx context.Context, sessionID string) (*athyr.Se
 func (m *mockAgent) DeleteSession(ctx context.Context, sessionID string) error { return nil }
 func (m *mockAgent) AddHint(ctx context.Context, sessionID, hint string) error { return nil }
 func (m *mockAgent) KV(bucket string) athyr.KVBucket                             { return nil }
+func (m *mockAgent) ListAgents(ctx context.Context, skillFilter string) ([]athyr.AgentInfo, error) {
+	return nil, nil
+}
+func (m *mockAgent) GetAgent(ctx context.Context, agentID string) (*athyr.AgentInfo, error) {
+	return nil, nil
+}
 
 // Tests
 
