@@ -2,17 +2,17 @@ package athyr
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"log"
 	"runtime/debug"
 	"time"
 )
 
 // LogRequests returns middleware that logs requests and responses.
 // It logs the subject, duration, and any errors.
-func LogRequests(logger *log.Logger) Middleware {
+func LogRequests(logger Logger) Middleware {
 	if logger == nil {
-		logger = log.Default()
+		logger = nopLogger{}
 	}
 	return func(next RawHandler) RawHandler {
 		return func(ctx Context, data []byte) ([]byte, error) {
@@ -23,9 +23,9 @@ func LogRequests(logger *log.Logger) Middleware {
 			duration := time.Since(start)
 
 			if err != nil {
-				logger.Printf("[ERROR] %s (%v): %v", subject, duration, err)
+				logger.Error("request failed", "subject", subject, "duration", duration, "error", err)
 			} else {
-				logger.Printf("[INFO] %s (%v): %d bytes", subject, duration, len(resp))
+				logger.Info("request completed", "subject", subject, "duration", duration, "bytes", len(resp))
 			}
 
 			return resp, err
@@ -35,14 +35,14 @@ func LogRequests(logger *log.Logger) Middleware {
 
 // Recover returns middleware that recovers from panics.
 // It converts panics to Internal errors and optionally logs them.
-func Recover(logger *log.Logger) Middleware {
+func Recover(logger Logger) Middleware {
 	return func(next RawHandler) RawHandler {
 		return func(ctx Context, data []byte) (resp []byte, err error) {
 			defer func() {
 				if r := recover(); r != nil {
 					stack := debug.Stack()
 					if logger != nil {
-						logger.Printf("[PANIC] %s: %v\n%s", ctx.Subject(), r, stack)
+						logger.Error("panic recovered", "subject", ctx.Subject(), "panic", r, "stack", string(stack))
 					}
 					err = Internal("internal error: panic recovered")
 				}
@@ -102,10 +102,10 @@ func (c *timeoutContext) Agent() Agent         { return c.serviceCtx.Agent() }
 func (c *timeoutContext) Subject() string      { return c.serviceCtx.Subject() }
 func (c *timeoutContext) ReplySubject() string { return c.serviceCtx.ReplySubject() }
 
-// RateLimit returns middleware that limits concurrent requests.
+// MaxConcurrency returns middleware that limits concurrent requests.
 // Requests beyond the limit receive Unavailable error immediately.
-func RateLimit(maxConcurrent int) Middleware {
-	sem := make(chan struct{}, maxConcurrent)
+func MaxConcurrency(limit int) Middleware {
+	sem := make(chan struct{}, limit)
 	return func(next RawHandler) RawHandler {
 		return func(ctx Context, data []byte) ([]byte, error) {
 			select {
@@ -113,10 +113,18 @@ func RateLimit(maxConcurrent int) Middleware {
 				defer func() { <-sem }()
 				return next(ctx, data)
 			default:
-				return nil, Unavailable("rate limit exceeded: max %d concurrent requests", maxConcurrent)
+				return nil, Unavailable("concurrency limit exceeded: max %d concurrent requests", limit)
 			}
 		}
 	}
+}
+
+// RateLimit is a deprecated alias for MaxConcurrency.
+//
+// Deprecated: Use MaxConcurrency instead. RateLimit is a misnomer —
+// this middleware limits concurrency (semaphore), not rate (token bucket).
+func RateLimit(maxConcurrent int) Middleware {
+	return MaxConcurrency(maxConcurrent)
 }
 
 // MetricsCallback receives timing and error info for each request.
@@ -195,8 +203,13 @@ func Retry(maxAttempts int, backoff time.Duration) Middleware {
 
 // isRetryable checks if an error should be retried.
 func isRetryable(err error) bool {
-	if se, ok := err.(*ServiceError); ok {
+	var se *ServiceError
+	if errors.As(err, &se) {
 		return se.Code == "unavailable"
+	}
+	var ae *AthyrError
+	if errors.As(err, &ae) {
+		return ae.Code == ErrCodeUnavailable || ae.Code == ErrCodeDeadlineExceeded
 	}
 	return false
 }

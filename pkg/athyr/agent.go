@@ -32,6 +32,7 @@ type Agent interface {
 	// LLM
 	Complete(ctx context.Context, req CompletionRequest) (*CompletionResponse, error)
 	CompleteStream(ctx context.Context, req CompletionRequest, handler StreamHandler) error
+	ResumeStream(ctx context.Context, requestID string, lastSequence uint64, handler StreamHandler) error
 	Models(ctx context.Context) ([]Model, error)
 
 	// Memory

@@ -78,6 +78,13 @@ func (c *agent) Request(ctx context.Context, subject string, data []byte) ([]byt
 		return nil, err
 	}
 
+	// Enforce requestTimeout client-side if no deadline already set
+	if _, hasDeadline := ctx.Deadline(); !hasDeadline && c.opts.requestTimeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, c.opts.requestTimeout)
+		defer cancel()
+	}
+
 	resp, err := c.athyr.Request(ctx, &athyr.RequestMessage{
 		AgentId:   c.agentID,
 		Subject:   subject,
