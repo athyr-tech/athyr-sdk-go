@@ -11,7 +11,11 @@ type KVBucket interface {
 	Get(ctx context.Context, key string) (*KVEntry, error)
 	Put(ctx context.Context, key string, value []byte) (uint64, error)
 	Delete(ctx context.Context, key string) error
-	List(ctx context.Context, prefix string) ([]string, error)
+
+	// List returns keys matching the given pattern.
+	// Supports wildcards (e.g., "user.*" matches "user.123", "user.456").
+	// Use "" to list all keys in the bucket.
+	List(ctx context.Context, pattern string) ([]string, error)
 }
 
 // KV returns a KVBucket for the given bucket name.
@@ -79,7 +83,7 @@ func (k *kvBucket) Delete(ctx context.Context, key string) error {
 	return wrapError("KV.Delete", err)
 }
 
-func (k *kvBucket) List(ctx context.Context, prefix string) ([]string, error) {
+func (k *kvBucket) List(ctx context.Context, pattern string) ([]string, error) {
 	if err := k.client.checkConnected(); err != nil {
 		return nil, err
 	}
@@ -87,7 +91,7 @@ func (k *kvBucket) List(ctx context.Context, prefix string) ([]string, error) {
 	resp, err := k.client.athyr.KVList(ctx, &athyr.KVListRequest{
 		AgentId: k.client.agentID,
 		Bucket:  k.bucket,
-		Prefix:  prefix,
+		Prefix:  pattern,
 	})
 	if err != nil {
 		return nil, wrapError("KV.List", err)

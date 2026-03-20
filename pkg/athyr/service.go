@@ -52,7 +52,10 @@ type Service struct {
 	middleware []Middleware
 }
 
-// ServiceOption configures a Service.
+// ServiceOption configures a Service created via NewService, NewRawService,
+// Handle, HandleRaw, Run, or RunRaw.
+// These options control per-service concerns: queue groups, display names,
+// and service-specific middleware.
 type ServiceOption func(*Service)
 
 // WithQueueGroup sets the queue group for load balancing.

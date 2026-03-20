@@ -2,6 +2,7 @@ package athyr
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"math/rand"
 	"sync"
@@ -498,6 +499,10 @@ func (c *agent) buildTransportCredentials() (credentials.TransportCredentials, e
 			return nil, fmt.Errorf("failed to load TLS cert %q: %w", c.opts.tlsCertFile, err)
 		}
 		return creds, nil
+
+	case c.opts.systemTLS:
+		// Use system certificate pool
+		return credentials.NewTLS(&tls.Config{}), nil
 
 	default:
 		// No TLS options specified - backwards compatibility mode

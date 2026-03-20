@@ -34,7 +34,9 @@ func (s ConnectionState) String() string {
 // The error is non-nil when transitioning to StateDisconnected or StateReconnecting.
 type ConnectionCallback func(state ConnectionState, err error)
 
-// AgentOption configures a Agent.
+// AgentOption configures an Agent created via NewAgent or MustConnect.
+// These options control agent-level concerns: TLS, heartbeats, reconnection,
+// and observability. For server-level configuration, see ServerOption.
 type AgentOption func(*agentOptions)
 
 type agentOptions struct {
@@ -46,6 +48,7 @@ type agentOptions struct {
 	tlsCertFile string      // Path to CA cert file (PEM)
 	tlsConfig   *tls.Config // Custom TLS config (advanced)
 	insecure    bool        // Explicit opt-in for insecure connections
+	systemTLS   bool        // Use system certificate pool
 
 	// Auto-reconnect
 	autoReconnect bool
@@ -99,7 +102,7 @@ func WithCapabilities(caps ...string) AgentOption {
 
 // WithTLS configures TLS using a CA certificate file.
 // The cert file should be a PEM-encoded CA certificate.
-// If certFile is empty, the system certificate pool is used.
+// To use the system certificate pool instead, use WithSystemTLS().
 //
 // Example:
 //
@@ -123,6 +126,7 @@ func WithTLS(certFile string) AgentOption {
 //	)
 func WithSystemTLS() AgentOption {
 	return func(o *agentOptions) {
+		o.systemTLS = true
 		o.tlsCertFile = ""
 		o.tlsConfig = nil
 		o.insecure = false
