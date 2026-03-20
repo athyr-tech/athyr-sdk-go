@@ -2,6 +2,7 @@ package orchestration
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"testing"
 	"time"
@@ -406,6 +407,88 @@ func TestFanOutError_Unwrap(t *testing.T) {
 
 	if !errors.Is(err, underlying) {
 		t.Error("expected Unwrap to return underlying error")
+	}
+}
+
+// marshalResults tests
+
+func TestMarshalResults_ValidJSON(t *testing.T) {
+	results := map[string][]byte{
+		"agent-a": []byte(`{"score":42}`),
+		"agent-b": []byte(`{"items":["x","y"]}`),
+	}
+
+	out := marshalResults(results)
+
+	// Must be valid JSON
+	var parsed map[string]json.RawMessage
+	if err := json.Unmarshal(out, &parsed); err != nil {
+		t.Fatalf("marshalResults produced invalid JSON: %v\noutput: %s", err, out)
+	}
+
+	// JSON values should round-trip as raw JSON
+	if string(parsed["agent-a"]) != `{"score":42}` {
+		t.Errorf("agent-a: expected {\"score\":42}, got %s", parsed["agent-a"])
+	}
+	if string(parsed["agent-b"]) != `{"items":["x","y"]}` {
+		t.Errorf("agent-b: expected {\"items\":[\"x\",\"y\"]}, got %s", parsed["agent-b"])
+	}
+}
+
+func TestMarshalResults_SpecialChars(t *testing.T) {
+	results := map[string][]byte{
+		"agent": []byte(`he said "hello" and \ backslash`),
+	}
+
+	out := marshalResults(results)
+
+	// Must be valid JSON even with quotes and backslashes in values
+	var parsed map[string]json.RawMessage
+	if err := json.Unmarshal(out, &parsed); err != nil {
+		t.Fatalf("marshalResults produced invalid JSON for special chars: %v\noutput: %s", err, out)
+	}
+
+	// Non-JSON bytes should be quoted as a string
+	var s string
+	if err := json.Unmarshal(parsed["agent"], &s); err != nil {
+		t.Fatalf("failed to unmarshal agent value as string: %v", err)
+	}
+	if s != `he said "hello" and \ backslash` {
+		t.Errorf("expected original string, got %q", s)
+	}
+}
+
+func TestMarshalResults_Empty(t *testing.T) {
+	out := marshalResults(map[string][]byte{})
+	if string(out) != "{}" {
+		t.Errorf("expected '{}', got '%s'", out)
+	}
+
+	out2 := marshalResults(nil)
+	if string(out2) != "{}" {
+		t.Errorf("expected '{}' for nil, got '%s'", out2)
+	}
+}
+
+func TestMarshalResults_NonJSON(t *testing.T) {
+	results := map[string][]byte{
+		"agent": []byte("plain text response"),
+	}
+
+	out := marshalResults(results)
+
+	var parsed map[string]json.RawMessage
+	if err := json.Unmarshal(out, &parsed); err != nil {
+		t.Fatalf("marshalResults produced invalid JSON for non-JSON bytes: %v\noutput: %s", err, out)
+	}
+
+	// Non-JSON bytes should be string-quoted
+	var s string
+	if err := json.Unmarshal(parsed["agent"], &s); err != nil {
+		t.Fatalf("expected non-JSON bytes to be quoted as string: %v", err)
+	}
+	if s != "plain text response" {
+		t.Errorf("expected 'plain text response', got %q", s)
 	}
 }
 

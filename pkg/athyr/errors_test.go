@@ -186,6 +186,51 @@ func TestWrapError_NonGRPCError(t *testing.T) {
 	}
 }
 
+func TestErrNotConnected_IsConsistent(t *testing.T) {
+	// ErrNotConnected is now an *AthyrError, so errors.Is should work
+	// with both the sentinel and new instances with the same code.
+	err := &AthyrError{Code: ErrCodeNotConnected, Message: "custom message"}
+	if !errors.Is(err, ErrNotConnected) {
+		t.Error("errors.Is should match ErrNotConnected by code")
+	}
+}
+
+func TestErrAlreadyConnected_IsConsistent(t *testing.T) {
+	err := &AthyrError{Code: ErrCodeAlreadyConnected, Message: "custom message"}
+	if !errors.Is(err, ErrAlreadyConnected) {
+		t.Error("errors.Is should match ErrAlreadyConnected by code")
+	}
+}
+
+func TestAllSentinels_ErrorsIs(t *testing.T) {
+	sentinels := map[string]*AthyrError{
+		"ErrNotFound":         ErrNotFound,
+		"ErrUnavailable":      ErrUnavailable,
+		"ErrInvalidArgument":  ErrInvalidArgument,
+		"ErrInternal":         ErrInternal,
+		"ErrUnauthenticated":  ErrUnauthenticated,
+		"ErrPermissionDenied": ErrPermissionDenied,
+		"ErrAlreadyExists":    ErrAlreadyExists,
+		"ErrDeadlineExceeded": ErrDeadlineExceeded,
+		"ErrNotConnected":     ErrNotConnected,
+		"ErrAlreadyConnected": ErrAlreadyConnected,
+	}
+
+	for name, sentinel := range sentinels {
+		t.Run(name, func(t *testing.T) {
+			// Create a new error with the same code
+			err := &AthyrError{
+				Code:    sentinel.Code,
+				Message: "test error",
+				Op:      "TestOp",
+			}
+			if !errors.Is(err, sentinel) {
+				t.Errorf("errors.Is(%s) should match sentinel", name)
+			}
+		})
+	}
+}
+
 func TestCodeFromGRPC(t *testing.T) {
 	tests := []struct {
 		grpcCode codes.Code

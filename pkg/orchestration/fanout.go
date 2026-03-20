@@ -2,6 +2,7 @@ package orchestration
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"sync"
@@ -333,34 +334,23 @@ func defaultAggregator(results map[string]AgentResult) ([]byte, error) {
 	return marshalResults(combined), nil
 }
 
-// marshalResults converts results map to simple JSON-like format.
-// Using simple format to avoid json package dependency for basic use.
+// marshalResults converts results map to a JSON object.
+// Valid JSON byte slices are embedded as raw JSON; non-JSON bytes are quoted as strings.
 func marshalResults(results map[string][]byte) []byte {
 	if len(results) == 0 {
 		return []byte("{}")
 	}
 
-	// Build simple JSON manually to avoid import
-	// Format: {"name1":"base64data1","name2":"base64data2"}
-	// For simplicity, we'll use a format that's easy to parse
-	// Real implementation might use encoding/json
-
-	// For now, just concatenate with separator
-	// Users with custom needs should use WithAggregator
-	var out []byte
-	out = append(out, '{')
-	first := true
+	m := make(map[string]json.RawMessage, len(results))
 	for name, data := range results {
-		if !first {
-			out = append(out, ',')
+		if json.Valid(data) {
+			m[name] = data
+		} else {
+			// Quote as JSON string for non-JSON bytes
+			m[name], _ = json.Marshal(string(data))
 		}
-		first = false
-		out = append(out, '"')
-		out = append(out, name...)
-		out = append(out, '"', ':', '"')
-		out = append(out, data...)
-		out = append(out, '"')
 	}
-	out = append(out, '}')
+
+	out, _ := json.Marshal(m)
 	return out
 }

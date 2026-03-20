@@ -8,12 +8,6 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// Sentinel errors for agent operations.
-var (
-	ErrNotConnected     = errors.New("agent not connected")
-	ErrAlreadyConnected = errors.New("agent already connected")
-)
-
 // StreamError represents a streaming failure with context about what was
 // already streamed. This allows agents to make informed retry decisions.
 type StreamError struct {
@@ -47,6 +41,8 @@ const (
 	ErrCodePermissionDenied ErrorCode = "permission_denied"
 	ErrCodeAlreadyExists    ErrorCode = "already_exists"
 	ErrCodeDeadlineExceeded ErrorCode = "deadline_exceeded"
+	ErrCodeNotConnected     ErrorCode = "not_connected"
+	ErrCodeAlreadyConnected ErrorCode = "already_connected"
 	ErrCodeUnknown          ErrorCode = "unknown"
 )
 
@@ -89,6 +85,8 @@ var (
 	ErrPermissionDenied = &AthyrError{Code: ErrCodePermissionDenied}
 	ErrAlreadyExists    = &AthyrError{Code: ErrCodeAlreadyExists}
 	ErrDeadlineExceeded = &AthyrError{Code: ErrCodeDeadlineExceeded}
+	ErrNotConnected     = &AthyrError{Code: ErrCodeNotConnected, Message: "agent not connected"}
+	ErrAlreadyConnected = &AthyrError{Code: ErrCodeAlreadyConnected, Message: "agent already connected"}
 )
 
 // IsNotFound reports whether the error indicates a not found condition.
@@ -129,6 +127,16 @@ func IsAlreadyExists(err error) bool {
 // IsDeadlineExceeded reports whether the error indicates a timeout.
 func IsDeadlineExceeded(err error) bool {
 	return errors.Is(err, ErrDeadlineExceeded)
+}
+
+// IsNotConnected reports whether the error indicates the agent is not connected.
+func IsNotConnected(err error) bool {
+	return errors.Is(err, ErrNotConnected)
+}
+
+// IsAlreadyConnected reports whether the error indicates the agent is already connected.
+func IsAlreadyConnected(err error) bool {
+	return errors.Is(err, ErrAlreadyConnected)
 }
 
 // wrapError wraps an error with operation context.

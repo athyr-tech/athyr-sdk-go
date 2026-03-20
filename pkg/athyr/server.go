@@ -23,13 +23,16 @@ type Server struct {
 	tlsCertFile string
 	tlsConfig   *tls.Config
 	insecure    bool
+	systemTLS   bool
 
 	agent Agent
 	subs  []Subscription
 	mu    sync.Mutex
 }
 
-// ServerOption configures a Server.
+// ServerOption configures a Server created via NewServer, Run, or RunRaw.
+// These options control server-level concerns: agent identity, TLS, and
+// global middleware. For per-service configuration, see ServiceOption.
 type ServerOption func(*Server)
 
 // WithAgentName sets the agent name for registration.
@@ -76,6 +79,17 @@ func WithServerTLSConfig(cfg *tls.Config) ServerOption {
 	}
 }
 
+// WithServerSystemTLS configures TLS using the system certificate pool.
+// Use this for production when connecting to servers with publicly trusted certificates.
+func WithServerSystemTLS() ServerOption {
+	return func(s *Server) {
+		s.systemTLS = true
+		s.tlsCertFile = ""
+		s.tlsConfig = nil
+		s.insecure = false
+	}
+}
+
 // WithServerInsecure disables TLS for development and testing.
 func WithServerInsecure() ServerOption {
 	return func(s *Server) {
@@ -112,7 +126,8 @@ func Handle[Req, Resp any](s *Server, subject string, handler Handler[Req, Resp]
 }
 
 // HandleRaw adds a raw handler for a subject.
-func (s *Server) HandleRaw(subject string, handler RawHandler, opts ...ServiceOption) *Server {
+// This is a package-level function for consistency with Handle.
+func HandleRaw(s *Server, subject string, handler RawHandler, opts ...ServiceOption) *Server {
 	svc := NewRawService(subject, handler, opts...)
 	s.services = append(s.services, svc)
 	return s
@@ -142,6 +157,8 @@ func (s *Server) Run(ctx context.Context) error {
 		agentOpts = append(agentOpts, WithTLSConfig(s.tlsConfig))
 	case s.tlsCertFile != "":
 		agentOpts = append(agentOpts, WithTLS(s.tlsCertFile))
+	case s.systemTLS:
+		agentOpts = append(agentOpts, WithSystemTLS())
 	}
 
 	// Create agent
@@ -247,15 +264,29 @@ func (s *Server) cleanup() {
 }
 
 // Run is a convenience function to run a single service.
-func Run[Req, Resp any](ctx context.Context, addr, subject string, handler Handler[Req, Resp], opts ...ServiceOption) error {
-	server := NewServer(addr, WithAgentName(subject))
-	Handle(server, subject, handler, opts...)
+// serverOpts configures the server (TLS, middleware, agent name, etc.).
+// If no WithAgentName option is provided, the subject is used as the agent name.
+func Run[Req, Resp any](ctx context.Context, addr, subject string,
+	handler Handler[Req, Resp], serverOpts []ServerOption, serviceOpts ...ServiceOption) error {
+	serverOpts = ensureAgentName(serverOpts, subject)
+	server := NewServer(addr, serverOpts...)
+	Handle(server, subject, handler, serviceOpts...)
 	return server.Run(ctx)
 }
 
 // RunRaw runs a single raw service.
-func RunRaw(ctx context.Context, addr, subject string, handler RawHandler, opts ...ServiceOption) error {
-	server := NewServer(addr, WithAgentName(subject))
-	server.HandleRaw(subject, handler, opts...)
+// serverOpts configures the server (TLS, middleware, agent name, etc.).
+// If no WithAgentName option is provided, the subject is used as the agent name.
+func RunRaw(ctx context.Context, addr, subject string,
+	handler RawHandler, serverOpts []ServerOption, serviceOpts ...ServiceOption) error {
+	serverOpts = ensureAgentName(serverOpts, subject)
+	server := NewServer(addr, serverOpts...)
+	HandleRaw(server, subject, handler, serviceOpts...)
 	return server.Run(ctx)
+}
+
+// ensureAgentName prepends WithAgentName(subject) so user-provided
+// WithAgentName options (applied later) take precedence.
+func ensureAgentName(opts []ServerOption, subject string) []ServerOption {
+	return append([]ServerOption{WithAgentName(subject)}, opts...)
 }

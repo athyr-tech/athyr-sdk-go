@@ -2,6 +2,7 @@ package athyr
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"math/rand"
 	"sync"
@@ -31,6 +32,7 @@ type Agent interface {
 	// LLM
 	Complete(ctx context.Context, req CompletionRequest) (*CompletionResponse, error)
 	CompleteStream(ctx context.Context, req CompletionRequest, handler StreamHandler) error
+	ResumeStream(ctx context.Context, requestID string, lastSequence uint64, handler StreamHandler) error
 	Models(ctx context.Context) ([]Model, error)
 
 	// Memory
@@ -498,6 +500,10 @@ func (c *agent) buildTransportCredentials() (credentials.TransportCredentials, e
 			return nil, fmt.Errorf("failed to load TLS cert %q: %w", c.opts.tlsCertFile, err)
 		}
 		return creds, nil
+
+	case c.opts.systemTLS:
+		// Use system certificate pool
+		return credentials.NewTLS(&tls.Config{}), nil
 
 	default:
 		// No TLS options specified - backwards compatibility mode

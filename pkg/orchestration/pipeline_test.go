@@ -79,6 +79,9 @@ func (m *mockAgent) Complete(ctx context.Context, req athyr.CompletionRequest) (
 func (m *mockAgent) CompleteStream(ctx context.Context, req athyr.CompletionRequest, handler athyr.StreamHandler) error {
 	return nil
 }
+func (m *mockAgent) ResumeStream(ctx context.Context, requestID string, lastSequence uint64, handler athyr.StreamHandler) error {
+	return nil
+}
 func (m *mockAgent) Models(ctx context.Context) ([]athyr.Model, error) { return nil, nil }
 func (m *mockAgent) CreateSession(ctx context.Context, profile athyr.SessionProfile, systemPrompt string) (*athyr.Session, error) {
 	return nil, nil

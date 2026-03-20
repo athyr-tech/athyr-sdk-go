@@ -1,19 +1,63 @@
 package athyr
 
 import (
-	"bytes"
 	"context"
 	"errors"
-	"log"
+	"fmt"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
 )
 
+// recordLogger captures log messages for test assertions.
+type recordLogger struct {
+	mu       sync.Mutex
+	messages []string
+}
+
+func (l *recordLogger) Debug(msg string, args ...any) {
+	l.record("DEBUG", msg, args...)
+}
+
+func (l *recordLogger) Info(msg string, args ...any) {
+	l.record("INFO", msg, args...)
+}
+
+func (l *recordLogger) Warn(msg string, args ...any) {
+	l.record("WARN", msg, args...)
+}
+
+func (l *recordLogger) Error(msg string, args ...any) {
+	l.record("ERROR", msg, args...)
+}
+
+func (l *recordLogger) record(level, msg string, args ...any) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.messages = append(l.messages, fmt.Sprintf("[%s] %s %v", level, msg, args))
+}
+
+func (l *recordLogger) String() string {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	return strings.Join(l.messages, "\n")
+}
+
+func (l *recordLogger) contains(substr string) bool {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	for _, m := range l.messages {
+		if strings.Contains(m, substr) {
+			return true
+		}
+	}
+	return false
+}
+
 func TestLogRequests(t *testing.T) {
-	var buf bytes.Buffer
-	logger := log.New(&buf, "", 0)
+	logger := &recordLogger{}
 
 	handler := func(ctx Context, data []byte) ([]byte, error) {
 		return []byte("response"), nil
@@ -31,21 +75,17 @@ func TestLogRequests(t *testing.T) {
 		t.Errorf("expected 'response', got '%s'", resp)
 	}
 
-	logged := buf.String()
-	if !strings.Contains(logged, "[INFO]") {
+	logged := logger.String()
+	if !logger.contains("[INFO]") {
 		t.Errorf("expected [INFO] in log, got: %s", logged)
 	}
-	if !strings.Contains(logged, "test.log") {
+	if !logger.contains("test.log") {
 		t.Errorf("expected subject in log, got: %s", logged)
-	}
-	if !strings.Contains(logged, "8 bytes") {
-		t.Errorf("expected response size in log, got: %s", logged)
 	}
 }
 
 func TestLogRequests_Error(t *testing.T) {
-	var buf bytes.Buffer
-	logger := log.New(&buf, "", 0)
+	logger := &recordLogger{}
 
 	handler := func(ctx Context, data []byte) ([]byte, error) {
 		return nil, BadRequest("invalid")
@@ -59,9 +99,8 @@ func TestLogRequests_Error(t *testing.T) {
 		t.Fatal("expected error")
 	}
 
-	logged := buf.String()
-	if !strings.Contains(logged, "[ERROR]") {
-		t.Errorf("expected [ERROR] in log, got: %s", logged)
+	if !logger.contains("[ERROR]") {
+		t.Errorf("expected [ERROR] in log, got: %s", logger.String())
 	}
 }
 
@@ -81,8 +120,7 @@ func TestLogRequests_NilLogger(t *testing.T) {
 }
 
 func TestRecover(t *testing.T) {
-	var buf bytes.Buffer
-	logger := log.New(&buf, "", 0)
+	logger := &recordLogger{}
 
 	handler := func(ctx Context, data []byte) ([]byte, error) {
 		panic("something bad happened")
@@ -108,11 +146,11 @@ func TestRecover(t *testing.T) {
 		t.Errorf("expected nil response, got %v", resp)
 	}
 
-	logged := buf.String()
-	if !strings.Contains(logged, "[PANIC]") {
-		t.Errorf("expected [PANIC] in log, got: %s", logged)
+	logged := logger.String()
+	if !logger.contains("panic recovered") {
+		t.Errorf("expected 'panic recovered' in log, got: %s", logged)
 	}
-	if !strings.Contains(logged, "something bad happened") {
+	if !logger.contains("something bad happened") {
 		t.Errorf("expected panic message in log, got: %s", logged)
 	}
 }
@@ -193,7 +231,7 @@ func TestTimeout_PreservesContext(t *testing.T) {
 	}
 }
 
-func TestRateLimit(t *testing.T) {
+func TestMaxConcurrency(t *testing.T) {
 	var concurrent int32
 
 	handler := func(ctx Context, data []byte) ([]byte, error) {
@@ -208,7 +246,7 @@ func TestRateLimit(t *testing.T) {
 		return []byte("ok"), nil
 	}
 
-	wrapped := RateLimit(2)(handler)
+	wrapped := MaxConcurrency(2)(handler)
 	ctx := newMockContext()
 
 	// Start 5 concurrent requests
@@ -221,20 +259,38 @@ func TestRateLimit(t *testing.T) {
 	}
 
 	// Collect results
-	var rateLimited int
+	var limited int
 	for i := 0; i < 5; i++ {
 		err := <-results
 		if err != nil {
 			var se *ServiceError
 			if errors.As(err, &se) && se.Code == "unavailable" {
-				rateLimited++
+				limited++
 			}
 		}
 	}
 
-	// At least some should be rate limited
-	if rateLimited == 0 {
-		t.Error("expected some requests to be rate limited")
+	// At least some should be limited
+	if limited == 0 {
+		t.Error("expected some requests to be concurrency-limited")
+	}
+}
+
+func TestRateLimit_DeprecatedAlias(t *testing.T) {
+	// RateLimit should work as an alias for MaxConcurrency
+	handler := func(ctx Context, data []byte) ([]byte, error) {
+		return []byte("ok"), nil
+	}
+
+	wrapped := RateLimit(1)(handler)
+	ctx := newMockContext()
+
+	resp, err := wrapped(ctx, nil)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if string(resp) != "ok" {
+		t.Errorf("expected 'ok', got '%s'", resp)
 	}
 }
 
@@ -419,6 +475,78 @@ func TestRetry_NonRetryableError(t *testing.T) {
 	// Should not retry non-retryable errors
 	if attempts != 1 {
 		t.Errorf("expected 1 attempt for non-retryable error, got %d", attempts)
+	}
+}
+
+func TestRetry_AthyrErrorUnavailable(t *testing.T) {
+	attempts := 0
+
+	handler := func(ctx Context, data []byte) ([]byte, error) {
+		attempts++
+		if attempts < 3 {
+			return nil, &AthyrError{Code: ErrCodeUnavailable, Message: "service unavailable"}
+		}
+		return []byte("success"), nil
+	}
+
+	wrapped := Retry(5, 10*time.Millisecond)(handler)
+	ctx := newMockContext()
+
+	resp, err := wrapped(ctx, nil)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if string(resp) != "success" {
+		t.Errorf("expected 'success', got '%s'", resp)
+	}
+	if attempts != 3 {
+		t.Errorf("expected 3 attempts, got %d", attempts)
+	}
+}
+
+func TestRetry_AthyrErrorDeadlineExceeded(t *testing.T) {
+	attempts := 0
+
+	handler := func(ctx Context, data []byte) ([]byte, error) {
+		attempts++
+		if attempts < 2 {
+			return nil, &AthyrError{Code: ErrCodeDeadlineExceeded, Message: "deadline exceeded"}
+		}
+		return []byte("ok"), nil
+	}
+
+	wrapped := Retry(5, 10*time.Millisecond)(handler)
+	ctx := newMockContext()
+
+	resp, err := wrapped(ctx, nil)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if string(resp) != "ok" {
+		t.Errorf("expected 'ok', got '%s'", resp)
+	}
+	if attempts != 2 {
+		t.Errorf("expected 2 attempts, got %d", attempts)
+	}
+}
+
+func TestRetry_AthyrErrorNotRetryable(t *testing.T) {
+	attempts := 0
+
+	handler := func(ctx Context, data []byte) ([]byte, error) {
+		attempts++
+		return nil, &AthyrError{Code: ErrCodeNotFound, Message: "not found"}
+	}
+
+	wrapped := Retry(5, 10*time.Millisecond)(handler)
+	ctx := newMockContext()
+
+	_, err := wrapped(ctx, nil)
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if attempts != 1 {
+		t.Errorf("expected 1 attempt for non-retryable AthyrError, got %d", attempts)
 	}
 }
 

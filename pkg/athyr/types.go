@@ -55,6 +55,7 @@ type CompletionRequest struct {
 	IncludeMemory bool             // Whether to inject memory context
 	Tools         []Tool           // Available tools the LLM can call
 	ToolChoice    string           // "auto", "none", "required", or specific tool name
+	Durable       bool             // Enable disconnect recovery for streaming
 }
 
 // TokenUsage tracks token consumption.
@@ -77,13 +78,22 @@ type CompletionResponse struct {
 
 // StreamChunk represents a single chunk in a streaming response.
 type StreamChunk struct {
-	Content   string
-	Done      bool
-	Usage     *TokenUsage // Only on final chunk
-	Model     string      // Only on final chunk
-	Backend   string      // Only on final chunk
-	Error     string      // Error message if failed
-	ToolCalls []ToolCall  // Tool calls (complete on final chunk only)
+	Content    string
+	Done       bool
+	Usage      *TokenUsage      // Only on final chunk
+	Model      string           // Only on final chunk
+	Backend    string           // Only on final chunk
+	Error      string           // Error message if failed
+	ToolCalls  []ToolCall       // Tool calls (complete on final chunk only)
+	Sequence   uint64           // Sequence number for durable streams (for resume)
+	StreamInfo *DurableStreamInfo // Only on first chunk of durable streams
+}
+
+// DurableStreamInfo provides connection info for resuming a durable stream.
+type DurableStreamInfo struct {
+	RequestID string // Stream identifier for resumption
+	Subject   string // NATS subject the stream is published on
+	Stream    string // JetStream stream name
 }
 
 // StreamHandler is called for each chunk in a streaming response.

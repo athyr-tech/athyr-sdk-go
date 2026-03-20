@@ -90,11 +90,19 @@ func (c *agent) CompleteStream(ctx context.Context, req CompletionRequest, handl
 		}
 
 		sdkChunk := StreamChunk{
-			Content: chunk.Content,
-			Done:    chunk.Done,
-			Model:   chunk.Model,
-			Backend: chunk.Backend,
-			Error:   chunk.Error,
+			Content:  chunk.Content,
+			Done:     chunk.Done,
+			Model:    chunk.Model,
+			Backend:  chunk.Backend,
+			Error:    chunk.Error,
+			Sequence: chunk.Sequence,
+		}
+		if chunk.StreamInfo != nil {
+			sdkChunk.StreamInfo = &DurableStreamInfo{
+				RequestID: chunk.StreamInfo.RequestId,
+				Subject:   chunk.StreamInfo.Subject,
+				Stream:    chunk.StreamInfo.Stream,
+			}
 		}
 		if chunk.Usage != nil {
 			sdkChunk.Usage = &TokenUsage{
@@ -104,6 +112,60 @@ func (c *agent) CompleteStream(ctx context.Context, req CompletionRequest, handl
 			}
 		}
 		// Parse tool calls (complete on final chunk)
+		for _, tc := range chunk.ToolCalls {
+			sdkChunk.ToolCalls = append(sdkChunk.ToolCalls, ToolCall{
+				ID:        tc.Id,
+				Name:      tc.Name,
+				Arguments: []byte(tc.Arguments),
+			})
+		}
+
+		if err := handler(sdkChunk); err != nil {
+			return err
+		}
+	}
+}
+
+// ResumeStream resumes a durable stream from a given sequence number.
+// Use this to recover from disconnects during streaming completions initiated with Durable: true.
+func (c *agent) ResumeStream(ctx context.Context, requestID string, lastSequence uint64, handler StreamHandler) error {
+	if err := c.checkConnected(); err != nil {
+		return err
+	}
+
+	stream, err := c.athyr.ResumeStream(ctx, &athyr.ResumeStreamRequest{
+		AgentId:      c.agentID,
+		RequestId:    requestID,
+		LastSequence: lastSequence,
+	})
+	if err != nil {
+		return wrapError("ResumeStream", err)
+	}
+
+	for {
+		chunk, err := stream.Recv()
+		if err == io.EOF {
+			return nil
+		}
+		if err != nil {
+			return wrapError("ResumeStream", err)
+		}
+
+		sdkChunk := StreamChunk{
+			Content:  chunk.Content,
+			Done:     chunk.Done,
+			Model:    chunk.Model,
+			Backend:  chunk.Backend,
+			Error:    chunk.Error,
+			Sequence: chunk.Sequence,
+		}
+		if chunk.Usage != nil {
+			sdkChunk.Usage = &TokenUsage{
+				PromptTokens:     int(chunk.Usage.PromptTokens),
+				CompletionTokens: int(chunk.Usage.CompletionTokens),
+				TotalTokens:      int(chunk.Usage.TotalTokens),
+			}
+		}
 		for _, tc := range chunk.ToolCalls {
 			sdkChunk.ToolCalls = append(sdkChunk.ToolCalls, ToolCall{
 				ID:        tc.Id,
@@ -150,6 +212,7 @@ func (c *agent) buildCompletionRequest(req CompletionRequest) *athyr.CompletionR
 		SessionId:     req.SessionID,
 		IncludeMemory: req.IncludeMemory,
 		ToolChoice:    req.ToolChoice,
+		Durable:       req.Durable,
 		Config: &athyr.CompletionConfig{
 			Temperature: req.Config.Temperature,
 			MaxTokens:   int32(req.Config.MaxTokens),
